@@ -5,6 +5,13 @@ point_cloud_range = [-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]
 input_modality = dict(use_lidar=True, use_camera=True)
 backend_args = None
 
+metainfo = dict(
+    classes=[
+        "car", "truck", "construction_vehicle", "bus", "trailer",
+        "barrier", "motorcycle", "bicycle", "pedestrian", "traffic_cone"
+    ],
+    version="v1.0-mini")
+
 model = dict(
     type='BEVFusion',
     data_preprocessor=dict(
@@ -174,10 +181,19 @@ test_pipeline = [
 
 train_dataloader = dict(
     dataset=dict(
-        dataset=dict(pipeline=train_pipeline, modality=input_modality, ann_file='nuscenes_mini_infos_train.pkl')))
+        dataset=dict(
+            pipeline=train_pipeline,
+            modality=input_modality,
+            ann_file="nuscenes_mini_infos_train.pkl")))
 val_dataloader = dict(
-    dataset=dict(pipeline=test_pipeline, modality=input_modality, ann_file='nuscenes_mini_infos_val.pkl'))
+    dataset=dict(
+        pipeline=test_pipeline,
+        modality=input_modality,
+        ann_file="nuscenes_mini_infos_val.pkl"))
 test_dataloader = val_dataloader
+
+val_evaluator = dict(ann_file="data/nuscenes/nuscenes_mini_infos_val.pkl")
+test_evaluator = val_evaluator
 
 param_scheduler = [
     dict(
@@ -214,7 +230,7 @@ param_scheduler = [
 ]
 
 # runtime settings
-train_cfg = dict(by_epoch=True, max_epochs=1, val_interval=1)
+train_cfg = dict(by_epoch=True, max_epochs=6, val_interval=1)
 val_cfg = dict()
 test_cfg = dict()
 
