@@ -1,0 +1,1473 @@
+2026/04/10 21:03:29 - mmengine - INFO - 
+------------------------------------------------------------
+System environment:
+    sys.platform: linux
+    Python: 3.9.25 (main, Nov  3 2025, 22:33:05) [GCC 11.2.0]
+    CUDA available: True
+    MUSA available: False
+    numpy_random_seed: 394654280
+    GPU 0: NVIDIA GeForce RTX 4090
+    CUDA_HOME: /usr/local/cuda
+    NVCC: Cuda compilation tools, release 11.8, V11.8.89
+    GCC: gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0
+    PyTorch: 2.1.2+cu118
+    PyTorch compiling details: PyTorch built with:
+  - GCC 9.3
+  - C++ Version: 201703
+  - Intel(R) oneAPI Math Kernel Library Version 2022.2-Product Build 20220804 for Intel(R) 64 architecture applications
+  - Intel(R) MKL-DNN v3.1.1 (Git Hash 64f6bcbcbab628e96f33a62c3e975f8535a7bde4)
+  - OpenMP 201511 (a.k.a. OpenMP 4.5)
+  - LAPACK is enabled (usually provided by MKL)
+  - NNPACK is enabled
+  - CPU capability usage: AVX2
+  - CUDA Runtime 11.8
+  - NVCC architecture flags: -gencode;arch=compute_50,code=sm_50;-gencode;arch=compute_60,code=sm_60;-gencode;arch=compute_70,code=sm_70;-gencode;arch=compute_75,code=sm_75;-gencode;arch=compute_80,code=sm_80;-gencode;arch=compute_86,code=sm_86;-gencode;arch=compute_37,code=sm_37;-gencode;arch=compute_90,code=sm_90
+  - CuDNN 8.7
+  - Magma 2.6.1
+  - Build settings: BLAS_INFO=mkl, BUILD_TYPE=Release, CUDA_VERSION=11.8, CUDNN_VERSION=8.7.0, CXX_COMPILER=/opt/rh/devtoolset-9/root/usr/bin/c++, CXX_FLAGS= -D_GLIBCXX_USE_CXX11_ABI=0 -fabi-version=11 -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -DNDEBUG -DUSE_KINETO -DLIBKINETO_NOROCTRACER -DUSE_FBGEMM -DUSE_QNNPACK -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -O2 -fPIC -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Werror=bool-operation -Wnarrowing -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-stringop-overflow -Wno-psabi -Wno-error=pedantic -Wno-error=old-style-cast -Wno-invalid-partial-specialization -Wno-unused-private-field -Wno-aligned-allocation-unavailable -Wno-missing-braces -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Werror=cast-function-type -Wno-stringop-overflow, LAPACK_INFO=mkl, PERF_WITH_AVX=1, PERF_WITH_AVX2=1, PERF_WITH_AVX512=1, TORCH_DISABLE_GPU_ASSERTS=ON, TORCH_VERSION=2.1.2, USE_CUDA=ON, USE_CUDNN=ON, USE_EXCEPTION_PTR=1, USE_GFLAGS=OFF, USE_GLOG=OFF, USE_MKL=ON, USE_MKLDNN=ON, USE_MPI=OFF, USE_NCCL=1, USE_NNPACK=ON, USE_OPENMP=ON, USE_ROCM=OFF, 
+
+    TorchVision: 0.16.2+cu118
+    OpenCV: 4.11.0
+    MMEngine: 0.10.4
+
+Runtime environment:
+    cudnn_benchmark: False
+    mp_cfg: {'mp_start_method': 'fork', 'opencv_num_threads': 0}
+    dist_cfg: {'backend': 'nccl'}
+    seed: 394654280
+    Distributed launcher: none
+    Distributed training: False
+    GPU number: 1
+------------------------------------------------------------
+
+2026/04/10 21:03:30 - mmengine - INFO - Config:
+auto_scale_lr = dict(base_batch_size=32, enable=False)
+backend_args = None
+class_names = [
+    'car',
+    'truck',
+    'construction_vehicle',
+    'bus',
+    'trailer',
+    'barrier',
+    'motorcycle',
+    'bicycle',
+    'pedestrian',
+    'traffic_cone',
+]
+custom_imports = dict(
+    allow_failed_imports=False, imports=[
+        'projects.BEVFusion.bevfusion',
+    ])
+data_prefix = dict(
+    CAM_BACK='samples/CAM_BACK',
+    CAM_BACK_LEFT='samples/CAM_BACK_LEFT',
+    CAM_BACK_RIGHT='samples/CAM_BACK_RIGHT',
+    CAM_FRONT='samples/CAM_FRONT',
+    CAM_FRONT_LEFT='samples/CAM_FRONT_LEFT',
+    CAM_FRONT_RIGHT='samples/CAM_FRONT_RIGHT',
+    pts='samples/LIDAR_TOP',
+    sweeps='sweeps/LIDAR_TOP')
+data_root = 'data/nuscenes/'
+dataset_type = 'NuScenesDataset'
+db_sampler = dict(
+    classes=[
+        'car',
+        'truck',
+        'construction_vehicle',
+        'bus',
+        'trailer',
+        'barrier',
+        'motorcycle',
+        'bicycle',
+        'pedestrian',
+        'traffic_cone',
+    ],
+    data_root='data/nuscenes/',
+    info_path='data/nuscenes/nuscenes_dbinfos_train.pkl',
+    points_loader=dict(
+        backend_args=None,
+        coord_type='LIDAR',
+        load_dim=5,
+        type='LoadPointsFromFile',
+        use_dim=[
+            0,
+            1,
+            2,
+            3,
+            4,
+        ]),
+    prepare=dict(
+        filter_by_difficulty=[
+            -1,
+        ],
+        filter_by_min_points=dict(
+            barrier=5,
+            bicycle=5,
+            bus=5,
+            car=5,
+            construction_vehicle=5,
+            motorcycle=5,
+            pedestrian=5,
+            traffic_cone=5,
+            trailer=5,
+            truck=5)),
+    rate=1.0,
+    sample_groups=dict(
+        barrier=2,
+        bicycle=6,
+        bus=4,
+        car=2,
+        construction_vehicle=7,
+        motorcycle=6,
+        pedestrian=2,
+        traffic_cone=2,
+        trailer=6,
+        truck=3))
+default_hooks = dict(
+    checkpoint=dict(interval=1, type='CheckpointHook'),
+    logger=dict(interval=10, type='LoggerHook'),
+    param_scheduler=dict(type='ParamSchedulerHook'),
+    sampler_seed=dict(type='DistSamplerSeedHook'),
+    timer=dict(type='IterTimerHook'),
+    visualization=dict(type='Det3DVisualizationHook'))
+default_scope = 'mmdet3d'
+env_cfg = dict(
+    cudnn_benchmark=False,
+    dist_cfg=dict(backend='nccl'),
+    mp_cfg=dict(mp_start_method='fork', opencv_num_threads=0))
+input_modality = dict(use_camera=True, use_lidar=True)
+launcher = 'none'
+load_from = None
+log_level = 'INFO'
+log_processor = dict(by_epoch=True, type='LogProcessor', window_size=50)
+lr = 0.0001
+metainfo = dict(classes=[
+    'car',
+    'truck',
+    'construction_vehicle',
+    'bus',
+    'trailer',
+    'barrier',
+    'motorcycle',
+    'bicycle',
+    'pedestrian',
+    'traffic_cone',
+])
+model = dict(
+    bbox_head=dict(
+        auxiliary=True,
+        bbox_coder=dict(
+            code_size=10,
+            out_size_factor=8,
+            pc_range=[
+                -54.0,
+                -54.0,
+            ],
+            post_center_range=[
+                -61.2,
+                -61.2,
+                -10.0,
+                61.2,
+                61.2,
+                10.0,
+            ],
+            score_threshold=0.0,
+            type='TransFusionBBoxCoder',
+            voxel_size=[
+                0.075,
+                0.075,
+            ]),
+        bn_momentum=0.1,
+        common_heads=dict(
+            center=[
+                2,
+                2,
+            ],
+            dim=[
+                3,
+                2,
+            ],
+            height=[
+                1,
+                2,
+            ],
+            rot=[
+                2,
+                2,
+            ],
+            vel=[
+                2,
+                2,
+            ]),
+        decoder_layer=dict(
+            cross_attn_cfg=dict(dropout=0.1, embed_dims=128, num_heads=8),
+            ffn_cfg=dict(
+                act_cfg=dict(inplace=True, type='ReLU'),
+                embed_dims=128,
+                feedforward_channels=256,
+                ffn_drop=0.1,
+                num_fcs=2),
+            norm_cfg=dict(type='LN'),
+            pos_encoding_cfg=dict(input_channel=2, num_pos_feats=128),
+            self_attn_cfg=dict(dropout=0.1, embed_dims=128, num_heads=8),
+            type='TransformerDecoderLayer'),
+        hidden_channel=128,
+        in_channels=512,
+        loss_bbox=dict(
+            loss_weight=0.25, reduction='mean', type='mmdet.L1Loss'),
+        loss_cls=dict(
+            alpha=0.25,
+            gamma=2.0,
+            loss_weight=1.0,
+            reduction='mean',
+            type='mmdet.FocalLoss',
+            use_sigmoid=True),
+        loss_heatmap=dict(
+            loss_weight=1.0, reduction='mean', type='mmdet.GaussianFocalLoss'),
+        nms_kernel_size=3,
+        num_classes=10,
+        num_decoder_layers=1,
+        num_proposals=200,
+        test_cfg=dict(
+            dataset='nuScenes',
+            grid_size=[
+                1440,
+                1440,
+                41,
+            ],
+            nms_type=None,
+            out_size_factor=8,
+            pc_range=[
+                -54.0,
+                -54.0,
+            ],
+            voxel_size=[
+                0.075,
+                0.075,
+            ]),
+        train_cfg=dict(
+            assigner=dict(
+                cls_cost=dict(
+                    alpha=0.25,
+                    gamma=2.0,
+                    type='mmdet.FocalLossCost',
+                    weight=0.15),
+                iou_calculator=dict(coordinate='lidar', type='BboxOverlaps3D'),
+                iou_cost=dict(type='IoU3DCost', weight=0.25),
+                reg_cost=dict(type='BBoxBEVL1Cost', weight=0.25),
+                type='HungarianAssigner3D'),
+            code_weights=[
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                0.2,
+                0.2,
+            ],
+            dataset='nuScenes',
+            gaussian_overlap=0.1,
+            grid_size=[
+                1440,
+                1440,
+                41,
+            ],
+            min_radius=2,
+            out_size_factor=8,
+            point_cloud_range=[
+                -54.0,
+                -54.0,
+                -5.0,
+                54.0,
+                54.0,
+                3.0,
+            ],
+            pos_weight=-1,
+            voxel_size=[
+                0.075,
+                0.075,
+                0.2,
+            ]),
+        type='TransFusionHead'),
+    data_preprocessor=dict(
+        bgr_to_rgb=False,
+        mean=[
+            123.675,
+            116.28,
+            103.53,
+        ],
+        pad_size_divisor=32,
+        std=[
+            58.395,
+            57.12,
+            57.375,
+        ],
+        type='Det3DDataPreprocessor',
+        voxelize_cfg=dict(
+            max_num_points=10,
+            max_voxels=[
+                120000,
+                160000,
+            ],
+            point_cloud_range=[
+                -54.0,
+                -54.0,
+                -5.0,
+                54.0,
+                54.0,
+                3.0,
+            ],
+            voxel_size=[
+                0.075,
+                0.075,
+                0.2,
+            ],
+            voxelize_reduce=True)),
+    fusion_layer=dict(
+        in_channels=[
+            80,
+            256,
+        ], out_channels=256, type='ConvFuser'),
+    img_backbone=dict(
+        attn_drop_rate=0.0,
+        convert_weights=True,
+        depths=[
+            2,
+            2,
+            6,
+            2,
+        ],
+        drop_path_rate=0.2,
+        drop_rate=0.0,
+        embed_dims=96,
+        init_cfg=None,
+        mlp_ratio=4,
+        num_heads=[
+            3,
+            6,
+            12,
+            24,
+        ],
+        out_indices=[
+            1,
+            2,
+            3,
+        ],
+        patch_norm=True,
+        qk_scale=None,
+        qkv_bias=True,
+        type='mmdet.SwinTransformer',
+        window_size=7,
+        with_cp=False),
+    img_neck=dict(
+        act_cfg=dict(inplace=True, type='ReLU'),
+        in_channels=[
+            192,
+            384,
+            768,
+        ],
+        norm_cfg=dict(requires_grad=True, type='BN2d'),
+        num_outs=3,
+        out_channels=256,
+        start_level=0,
+        type='GeneralizedLSSFPN',
+        upsample_cfg=dict(align_corners=False, mode='bilinear')),
+    pts_backbone=dict(
+        conv_cfg=dict(bias=False, type='Conv2d'),
+        in_channels=256,
+        layer_nums=[
+            5,
+            5,
+        ],
+        layer_strides=[
+            1,
+            2,
+        ],
+        norm_cfg=dict(eps=0.001, momentum=0.01, type='BN'),
+        out_channels=[
+            128,
+            256,
+        ],
+        type='SECOND'),
+    pts_middle_encoder=dict(
+        block_type='basicblock',
+        encoder_channels=(
+            (
+                16,
+                16,
+                32,
+            ),
+            (
+                32,
+                32,
+                64,
+            ),
+            (
+                64,
+                64,
+                128,
+            ),
+            (
+                128,
+                128,
+            ),
+        ),
+        encoder_paddings=(
+            (
+                0,
+                0,
+                1,
+            ),
+            (
+                0,
+                0,
+                1,
+            ),
+            (
+                0,
+                0,
+                (
+                    1,
+                    1,
+                    0,
+                ),
+            ),
+            (
+                0,
+                0,
+            ),
+        ),
+        in_channels=5,
+        norm_cfg=dict(eps=0.001, momentum=0.01, type='BN1d'),
+        order=(
+            'conv',
+            'norm',
+            'act',
+        ),
+        sparse_shape=[
+            1440,
+            1440,
+            41,
+        ],
+        type='BEVFusionSparseEncoder'),
+    pts_neck=dict(
+        in_channels=[
+            128,
+            256,
+        ],
+        norm_cfg=dict(eps=0.001, momentum=0.01, type='BN'),
+        out_channels=[
+            256,
+            256,
+        ],
+        type='SECONDFPN',
+        upsample_cfg=dict(bias=False, type='deconv'),
+        upsample_strides=[
+            1,
+            2,
+        ],
+        use_conv_for_no_stride=True),
+    pts_voxel_encoder=dict(num_features=5, type='HardSimpleVFE'),
+    type='BEVFusion',
+    view_transform=dict(
+        dbound=[
+            1.0,
+            60.0,
+            0.5,
+        ],
+        downsample=2,
+        feature_size=[
+            32,
+            88,
+        ],
+        image_size=[
+            256,
+            704,
+        ],
+        in_channels=256,
+        out_channels=80,
+        type='DepthLSSTransform',
+        xbound=[
+            -54.0,
+            54.0,
+            0.3,
+        ],
+        ybound=[
+            -54.0,
+            54.0,
+            0.3,
+        ],
+        zbound=[
+            -10.0,
+            10.0,
+            20.0,
+        ]))
+optim_wrapper = dict(
+    clip_grad=dict(max_norm=35, norm_type=2),
+    loss_scale='dynamic',
+    optimizer=dict(lr=0.0002, type='AdamW', weight_decay=0.01),
+    type='AmpOptimWrapper')
+param_scheduler = [
+    dict(
+        begin=0,
+        by_epoch=False,
+        end=500,
+        start_factor=0.33333333,
+        type='LinearLR'),
+    dict(
+        T_max=6,
+        begin=0,
+        by_epoch=True,
+        convert_to_iter_based=True,
+        end=6,
+        eta_min_ratio=0.0001,
+        type='CosineAnnealingLR'),
+    dict(
+        begin=0,
+        by_epoch=True,
+        convert_to_iter_based=True,
+        end=2.4,
+        eta_min=0.8947368421052632,
+        type='CosineAnnealingMomentum'),
+    dict(
+        begin=2.4,
+        by_epoch=True,
+        convert_to_iter_based=True,
+        end=6,
+        eta_min=1,
+        type='CosineAnnealingMomentum'),
+]
+point_cloud_range = [
+    -54.0,
+    -54.0,
+    -5.0,
+    54.0,
+    54.0,
+    3.0,
+]
+resume = False
+test_cfg = dict()
+test_dataloader = dict(
+    batch_size=1,
+    dataset=dict(
+        ann_file='nuscenes_mini_infos_val.pkl',
+        backend_args=None,
+        box_type_3d='LiDAR',
+        data_prefix=dict(
+            CAM_BACK='samples/CAM_BACK',
+            CAM_BACK_LEFT='samples/CAM_BACK_LEFT',
+            CAM_BACK_RIGHT='samples/CAM_BACK_RIGHT',
+            CAM_FRONT='samples/CAM_FRONT',
+            CAM_FRONT_LEFT='samples/CAM_FRONT_LEFT',
+            CAM_FRONT_RIGHT='samples/CAM_FRONT_RIGHT',
+            pts='samples/LIDAR_TOP',
+            sweeps='sweeps/LIDAR_TOP'),
+        data_root='data/nuscenes/',
+        metainfo=dict(classes=[
+            'car',
+            'truck',
+            'construction_vehicle',
+            'bus',
+            'trailer',
+            'barrier',
+            'motorcycle',
+            'bicycle',
+            'pedestrian',
+            'traffic_cone',
+        ]),
+        modality=dict(use_camera=True, use_lidar=True),
+        pipeline=[
+            dict(
+                backend_args=None,
+                color_type='color',
+                to_float32=True,
+                type='BEVLoadMultiViewImageFromFiles'),
+            dict(
+                backend_args=None,
+                coord_type='LIDAR',
+                load_dim=5,
+                type='LoadPointsFromFile',
+                use_dim=5),
+            dict(
+                backend_args=None,
+                load_dim=5,
+                pad_empty_sweeps=True,
+                remove_close=True,
+                sweeps_num=9,
+                type='LoadPointsFromMultiSweeps',
+                use_dim=5),
+            dict(
+                bot_pct_lim=[
+                    0.0,
+                    0.0,
+                ],
+                final_dim=[
+                    256,
+                    704,
+                ],
+                is_train=False,
+                rand_flip=False,
+                resize_lim=[
+                    0.48,
+                    0.48,
+                ],
+                rot_lim=[
+                    0.0,
+                    0.0,
+                ],
+                type='ImageAug3D'),
+            dict(
+                point_cloud_range=[
+                    -54.0,
+                    -54.0,
+                    -5.0,
+                    54.0,
+                    54.0,
+                    3.0,
+                ],
+                type='PointsRangeFilter'),
+            dict(
+                keys=[
+                    'img',
+                    'points',
+                    'gt_bboxes_3d',
+                    'gt_labels_3d',
+                ],
+                meta_keys=[
+                    'cam2img',
+                    'ori_cam2img',
+                    'lidar2cam',
+                    'lidar2img',
+                    'cam2lidar',
+                    'ori_lidar2img',
+                    'img_aug_matrix',
+                    'box_type_3d',
+                    'sample_idx',
+                    'lidar_path',
+                    'img_path',
+                    'num_pts_feats',
+                ],
+                type='Pack3DDetInputs'),
+        ],
+        test_mode=True,
+        type='NuScenesDataset'),
+    drop_last=False,
+    num_workers=0,
+    persistent_workers=False,
+    sampler=dict(shuffle=False, type='DefaultSampler'))
+test_evaluator = dict(
+    ann_file='data/nuscenes/nuscenes_mini_infos_val.pkl',
+    backend_args=None,
+    data_root='data/nuscenes/',
+    metric='bbox',
+    type='NuScenesMetric')
+test_pipeline = [
+    dict(
+        backend_args=None,
+        color_type='color',
+        to_float32=True,
+        type='BEVLoadMultiViewImageFromFiles'),
+    dict(
+        backend_args=None,
+        coord_type='LIDAR',
+        load_dim=5,
+        type='LoadPointsFromFile',
+        use_dim=5),
+    dict(
+        backend_args=None,
+        load_dim=5,
+        pad_empty_sweeps=True,
+        remove_close=True,
+        sweeps_num=9,
+        type='LoadPointsFromMultiSweeps',
+        use_dim=5),
+    dict(
+        bot_pct_lim=[
+            0.0,
+            0.0,
+        ],
+        final_dim=[
+            256,
+            704,
+        ],
+        is_train=False,
+        rand_flip=False,
+        resize_lim=[
+            0.48,
+            0.48,
+        ],
+        rot_lim=[
+            0.0,
+            0.0,
+        ],
+        type='ImageAug3D'),
+    dict(
+        point_cloud_range=[
+            -54.0,
+            -54.0,
+            -5.0,
+            54.0,
+            54.0,
+            3.0,
+        ],
+        type='PointsRangeFilter'),
+    dict(
+        keys=[
+            'img',
+            'points',
+            'gt_bboxes_3d',
+            'gt_labels_3d',
+        ],
+        meta_keys=[
+            'cam2img',
+            'ori_cam2img',
+            'lidar2cam',
+            'lidar2img',
+            'cam2lidar',
+            'ori_lidar2img',
+            'img_aug_matrix',
+            'box_type_3d',
+            'sample_idx',
+            'lidar_path',
+            'img_path',
+            'num_pts_feats',
+        ],
+        type='Pack3DDetInputs'),
+]
+train_cfg = dict(by_epoch=True, max_epochs=1, val_interval=1)
+train_dataloader = dict(
+    batch_size=1,
+    dataset=dict(
+        dataset=dict(
+            ann_file='nuscenes_mini_infos_train.pkl',
+            box_type_3d='LiDAR',
+            data_prefix=dict(
+                CAM_BACK='samples/CAM_BACK',
+                CAM_BACK_LEFT='samples/CAM_BACK_LEFT',
+                CAM_BACK_RIGHT='samples/CAM_BACK_RIGHT',
+                CAM_FRONT='samples/CAM_FRONT',
+                CAM_FRONT_LEFT='samples/CAM_FRONT_LEFT',
+                CAM_FRONT_RIGHT='samples/CAM_FRONT_RIGHT',
+                pts='samples/LIDAR_TOP',
+                sweeps='sweeps/LIDAR_TOP'),
+            data_root='data/nuscenes/',
+            metainfo=dict(classes=[
+                'car',
+                'truck',
+                'construction_vehicle',
+                'bus',
+                'trailer',
+                'barrier',
+                'motorcycle',
+                'bicycle',
+                'pedestrian',
+                'traffic_cone',
+            ]),
+            modality=dict(use_camera=True, use_lidar=True),
+            pipeline=[
+                dict(
+                    backend_args=None,
+                    color_type='color',
+                    to_float32=True,
+                    type='BEVLoadMultiViewImageFromFiles'),
+                dict(
+                    backend_args=None,
+                    coord_type='LIDAR',
+                    load_dim=5,
+                    type='LoadPointsFromFile',
+                    use_dim=5),
+                dict(
+                    backend_args=None,
+                    load_dim=5,
+                    pad_empty_sweeps=True,
+                    remove_close=True,
+                    sweeps_num=9,
+                    type='LoadPointsFromMultiSweeps',
+                    use_dim=5),
+                dict(
+                    type='LoadAnnotations3D',
+                    with_attr_label=False,
+                    with_bbox_3d=True,
+                    with_label_3d=True),
+                dict(
+                    bot_pct_lim=[
+                        0.0,
+                        0.0,
+                    ],
+                    final_dim=[
+                        256,
+                        704,
+                    ],
+                    is_train=True,
+                    rand_flip=True,
+                    resize_lim=[
+                        0.38,
+                        0.55,
+                    ],
+                    rot_lim=[
+                        -5.4,
+                        5.4,
+                    ],
+                    type='ImageAug3D'),
+                dict(
+                    rot_range=[
+                        -0.78539816,
+                        0.78539816,
+                    ],
+                    scale_ratio_range=[
+                        0.9,
+                        1.1,
+                    ],
+                    translation_std=0.5,
+                    type='BEVFusionGlobalRotScaleTrans'),
+                dict(type='BEVFusionRandomFlip3D'),
+                dict(
+                    point_cloud_range=[
+                        -54.0,
+                        -54.0,
+                        -5.0,
+                        54.0,
+                        54.0,
+                        3.0,
+                    ],
+                    type='PointsRangeFilter'),
+                dict(
+                    point_cloud_range=[
+                        -54.0,
+                        -54.0,
+                        -5.0,
+                        54.0,
+                        54.0,
+                        3.0,
+                    ],
+                    type='ObjectRangeFilter'),
+                dict(
+                    classes=[
+                        'car',
+                        'truck',
+                        'construction_vehicle',
+                        'bus',
+                        'trailer',
+                        'barrier',
+                        'motorcycle',
+                        'bicycle',
+                        'pedestrian',
+                        'traffic_cone',
+                    ],
+                    type='ObjectNameFilter'),
+                dict(
+                    fixed_prob=True,
+                    max_epoch=6,
+                    mode=1,
+                    offset=False,
+                    prob=0.0,
+                    ratio=0.5,
+                    rotate=1,
+                    type='GridMask',
+                    use_h=True,
+                    use_w=True),
+                dict(type='PointShuffle'),
+                dict(
+                    keys=[
+                        'points',
+                        'img',
+                        'gt_bboxes_3d',
+                        'gt_labels_3d',
+                        'gt_bboxes',
+                        'gt_labels',
+                    ],
+                    meta_keys=[
+                        'cam2img',
+                        'ori_cam2img',
+                        'lidar2cam',
+                        'lidar2img',
+                        'cam2lidar',
+                        'ori_lidar2img',
+                        'img_aug_matrix',
+                        'box_type_3d',
+                        'sample_idx',
+                        'lidar_path',
+                        'img_path',
+                        'transformation_3d_flow',
+                        'pcd_rotation',
+                        'pcd_scale_factor',
+                        'pcd_trans',
+                        'img_aug_matrix',
+                        'lidar_aug_matrix',
+                        'num_pts_feats',
+                    ],
+                    type='Pack3DDetInputs'),
+            ],
+            test_mode=False,
+            type='NuScenesDataset',
+            use_valid_flag=True),
+        type='CBGSDataset'),
+    num_workers=0,
+    persistent_workers=False,
+    sampler=dict(shuffle=True, type='DefaultSampler'))
+train_pipeline = [
+    dict(
+        backend_args=None,
+        color_type='color',
+        to_float32=True,
+        type='BEVLoadMultiViewImageFromFiles'),
+    dict(
+        backend_args=None,
+        coord_type='LIDAR',
+        load_dim=5,
+        type='LoadPointsFromFile',
+        use_dim=5),
+    dict(
+        backend_args=None,
+        load_dim=5,
+        pad_empty_sweeps=True,
+        remove_close=True,
+        sweeps_num=9,
+        type='LoadPointsFromMultiSweeps',
+        use_dim=5),
+    dict(
+        type='LoadAnnotations3D',
+        with_attr_label=False,
+        with_bbox_3d=True,
+        with_label_3d=True),
+    dict(
+        bot_pct_lim=[
+            0.0,
+            0.0,
+        ],
+        final_dim=[
+            256,
+            704,
+        ],
+        is_train=True,
+        rand_flip=True,
+        resize_lim=[
+            0.38,
+            0.55,
+        ],
+        rot_lim=[
+            -5.4,
+            5.4,
+        ],
+        type='ImageAug3D'),
+    dict(
+        rot_range=[
+            -0.78539816,
+            0.78539816,
+        ],
+        scale_ratio_range=[
+            0.9,
+            1.1,
+        ],
+        translation_std=0.5,
+        type='BEVFusionGlobalRotScaleTrans'),
+    dict(type='BEVFusionRandomFlip3D'),
+    dict(
+        point_cloud_range=[
+            -54.0,
+            -54.0,
+            -5.0,
+            54.0,
+            54.0,
+            3.0,
+        ],
+        type='PointsRangeFilter'),
+    dict(
+        point_cloud_range=[
+            -54.0,
+            -54.0,
+            -5.0,
+            54.0,
+            54.0,
+            3.0,
+        ],
+        type='ObjectRangeFilter'),
+    dict(
+        classes=[
+            'car',
+            'truck',
+            'construction_vehicle',
+            'bus',
+            'trailer',
+            'barrier',
+            'motorcycle',
+            'bicycle',
+            'pedestrian',
+            'traffic_cone',
+        ],
+        type='ObjectNameFilter'),
+    dict(
+        fixed_prob=True,
+        max_epoch=6,
+        mode=1,
+        offset=False,
+        prob=0.0,
+        ratio=0.5,
+        rotate=1,
+        type='GridMask',
+        use_h=True,
+        use_w=True),
+    dict(type='PointShuffle'),
+    dict(
+        keys=[
+            'points',
+            'img',
+            'gt_bboxes_3d',
+            'gt_labels_3d',
+            'gt_bboxes',
+            'gt_labels',
+        ],
+        meta_keys=[
+            'cam2img',
+            'ori_cam2img',
+            'lidar2cam',
+            'lidar2img',
+            'cam2lidar',
+            'ori_lidar2img',
+            'img_aug_matrix',
+            'box_type_3d',
+            'sample_idx',
+            'lidar_path',
+            'img_path',
+            'transformation_3d_flow',
+            'pcd_rotation',
+            'pcd_scale_factor',
+            'pcd_trans',
+            'img_aug_matrix',
+            'lidar_aug_matrix',
+            'num_pts_feats',
+        ],
+        type='Pack3DDetInputs'),
+]
+val_cfg = dict()
+val_dataloader = dict(
+    batch_size=1,
+    dataset=dict(
+        ann_file='nuscenes_mini_infos_val.pkl',
+        backend_args=None,
+        box_type_3d='LiDAR',
+        data_prefix=dict(
+            CAM_BACK='samples/CAM_BACK',
+            CAM_BACK_LEFT='samples/CAM_BACK_LEFT',
+            CAM_BACK_RIGHT='samples/CAM_BACK_RIGHT',
+            CAM_FRONT='samples/CAM_FRONT',
+            CAM_FRONT_LEFT='samples/CAM_FRONT_LEFT',
+            CAM_FRONT_RIGHT='samples/CAM_FRONT_RIGHT',
+            pts='samples/LIDAR_TOP',
+            sweeps='sweeps/LIDAR_TOP'),
+        data_root='data/nuscenes/',
+        metainfo=dict(classes=[
+            'car',
+            'truck',
+            'construction_vehicle',
+            'bus',
+            'trailer',
+            'barrier',
+            'motorcycle',
+            'bicycle',
+            'pedestrian',
+            'traffic_cone',
+        ]),
+        modality=dict(use_camera=True, use_lidar=True),
+        pipeline=[
+            dict(
+                backend_args=None,
+                color_type='color',
+                to_float32=True,
+                type='BEVLoadMultiViewImageFromFiles'),
+            dict(
+                backend_args=None,
+                coord_type='LIDAR',
+                load_dim=5,
+                type='LoadPointsFromFile',
+                use_dim=5),
+            dict(
+                backend_args=None,
+                load_dim=5,
+                pad_empty_sweeps=True,
+                remove_close=True,
+                sweeps_num=9,
+                type='LoadPointsFromMultiSweeps',
+                use_dim=5),
+            dict(
+                bot_pct_lim=[
+                    0.0,
+                    0.0,
+                ],
+                final_dim=[
+                    256,
+                    704,
+                ],
+                is_train=False,
+                rand_flip=False,
+                resize_lim=[
+                    0.48,
+                    0.48,
+                ],
+                rot_lim=[
+                    0.0,
+                    0.0,
+                ],
+                type='ImageAug3D'),
+            dict(
+                point_cloud_range=[
+                    -54.0,
+                    -54.0,
+                    -5.0,
+                    54.0,
+                    54.0,
+                    3.0,
+                ],
+                type='PointsRangeFilter'),
+            dict(
+                keys=[
+                    'img',
+                    'points',
+                    'gt_bboxes_3d',
+                    'gt_labels_3d',
+                ],
+                meta_keys=[
+                    'cam2img',
+                    'ori_cam2img',
+                    'lidar2cam',
+                    'lidar2img',
+                    'cam2lidar',
+                    'ori_lidar2img',
+                    'img_aug_matrix',
+                    'box_type_3d',
+                    'sample_idx',
+                    'lidar_path',
+                    'img_path',
+                    'num_pts_feats',
+                ],
+                type='Pack3DDetInputs'),
+        ],
+        test_mode=True,
+        type='NuScenesDataset'),
+    drop_last=False,
+    num_workers=0,
+    persistent_workers=False,
+    sampler=dict(shuffle=False, type='DefaultSampler'))
+val_evaluator = dict(
+    ann_file='data/nuscenes/nuscenes_mini_infos_val.pkl',
+    backend_args=None,
+    data_root='data/nuscenes/',
+    metric='bbox',
+    type='NuScenesMetric')
+vis_backends = [
+    dict(type='LocalVisBackend'),
+]
+visualizer = dict(
+    name='visualizer',
+    type='Det3DLocalVisualizer',
+    vis_backends=[
+        dict(type='LocalVisBackend'),
+    ])
+voxel_size = [
+    0.075,
+    0.075,
+    0.2,
+]
+work_dir = 'work_dirs/bevfusion_mini_debug_smoke'
+
+2026/04/10 21:03:41 - mmengine - WARNING - No pre-trained weights for SwinTransformer, training start from scratch
+2026/04/10 21:03:42 - mmengine - INFO - Distributed training is not used, all SyncBatchNorm (SyncBN) layers in the model will be automatically reverted to BatchNormXd layers if they are used.
+2026/04/10 21:03:42 - mmengine - INFO - Hooks will be executed in the following order:
+before_run:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+before_train:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+before_train_epoch:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) DistSamplerSeedHook                
+ -------------------- 
+before_train_iter:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+after_train_iter:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(BELOW_NORMAL) LoggerHook                         
+(LOW         ) ParamSchedulerHook                 
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+after_train_epoch:
+(NORMAL      ) IterTimerHook                      
+(LOW         ) ParamSchedulerHook                 
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+before_val:
+(VERY_HIGH   ) RuntimeInfoHook                    
+ -------------------- 
+before_val_epoch:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+before_val_iter:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+after_val_iter:
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) Det3DVisualizationHook             
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+after_val_epoch:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(BELOW_NORMAL) LoggerHook                         
+(LOW         ) ParamSchedulerHook                 
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+after_val:
+(VERY_HIGH   ) RuntimeInfoHook                    
+ -------------------- 
+after_train:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+before_test:
+(VERY_HIGH   ) RuntimeInfoHook                    
+ -------------------- 
+before_test_epoch:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+before_test_iter:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+after_test_iter:
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) Det3DVisualizationHook             
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+after_test_epoch:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+after_test:
+(VERY_HIGH   ) RuntimeInfoHook                    
+ -------------------- 
+after_run:
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+2026/04/10 21:03:44 - mmengine - INFO - ------------------------------
+2026/04/10 21:03:44 - mmengine - INFO - The length of training dataset: 323
+2026/04/10 21:03:44 - mmengine - INFO - The number of instances per category in the dataset:
++----------------------+--------+
+| category             | number |
++----------------------+--------+
+| car                  | 5051   |
+| truck                | 525    |
+| construction_vehicle | 196    |
+| bus                  | 369    |
+| trailer              | 60     |
+| barrier              | 2323   |
+| motorcycle           | 212    |
+| bicycle              | 191    |
+| pedestrian           | 3657   |
+| traffic_cone         | 1339   |
++----------------------+--------+
+2026/04/10 21:03:45 - mmengine - INFO - ------------------------------
+2026/04/10 21:03:45 - mmengine - INFO - The length of test dataset: 81
+2026/04/10 21:03:45 - mmengine - INFO - The number of instances per category in the dataset:
++----------------------+--------+
+| category             | number |
++----------------------+--------+
+| car                  | 2568   |
+| truck                | 124    |
+| construction_vehicle | 0      |
+| bus                  | 41     |
+| trailer              | 0      |
+| barrier              | 0      |
+| motorcycle           | 259    |
+| bicycle              | 52     |
+| pedestrian           | 1358   |
+| traffic_cone         | 39     |
++----------------------+--------+
+2026/04/10 21:03:46 - mmengine - WARNING - "FileClient" will be deprecated in future. Please use io functions in https://mmengine.readthedocs.io/en/latest/api/fileio.html#file-io
+2026/04/10 21:03:46 - mmengine - WARNING - "HardDiskBackend" is the alias of "LocalBackend" and the former will be deprecated in future.
+2026/04/10 21:03:46 - mmengine - INFO - Checkpoints will be saved to /workspace/mmdetection3d/work_dirs/bevfusion_mini_debug_smoke.
+2026/04/10 21:03:59 - mmengine - INFO - Epoch(train) [1][  10/1630]  lr: 6.9071e-05  eta: 0:35:38  time: 1.3203  data_time: 0.5264  memory: 4601  grad_norm: nan  loss: 2346.3490  loss_heatmap: 2321.5023  layer_-1_loss_cls: 11.4874  layer_-1_loss_bbox: 13.3592  matched_ious: 0.0002
+2026/04/10 21:04:08 - mmengine - INFO - Epoch(train) [1][  20/1630]  lr: 7.1743e-05  eta: 0:29:23  time: 1.0956  data_time: 0.5515  memory: 4589  grad_norm: nan  loss: 1870.6170  loss_heatmap: 1846.7718  layer_-1_loss_cls: 10.8435  layer_-1_loss_bbox: 13.0018  matched_ious: 0.0000
+2026/04/10 21:04:17 - mmengine - INFO - Epoch(train) [1][  30/1630]  lr: 7.4414e-05  eta: 0:27:13  time: 1.0209  data_time: 0.5503  memory: 4763  grad_norm: nan  loss: 1476.1496  loss_heatmap: 1452.6230  layer_-1_loss_cls: 11.4246  layer_-1_loss_bbox: 12.1019  matched_ious: 0.0021
+2026/04/10 21:04:26 - mmengine - INFO - Epoch(train) [1][  40/1630]  lr: 7.7084e-05  eta: 0:26:16  time: 0.9913  data_time: 0.5548  memory: 4591  grad_norm: nan  loss: 1170.5676  loss_heatmap: 1147.6040  layer_-1_loss_cls: 10.7847  layer_-1_loss_bbox: 12.1790  matched_ious: 0.0054
+2026/04/10 21:04:34 - mmengine - INFO - Epoch(train) [1][  50/1630]  lr: 7.9755e-05  eta: 0:25:20  time: 0.9624  data_time: 0.5509  memory: 4628  grad_norm: nan  loss: 968.0568  loss_heatmap: 944.5320  layer_-1_loss_cls: 11.2821  layer_-1_loss_bbox: 12.2427  matched_ious: 0.0000
+2026/04/10 21:04:43 - mmengine - INFO - Epoch(train) [1][  60/1630]  lr: 8.2424e-05  eta: 0:24:36  time: 0.8648  data_time: 0.5457  memory: 4622  grad_norm: 3455.2620  loss: 510.3035  loss_heatmap: 487.8878  layer_-1_loss_cls: 10.9951  layer_-1_loss_bbox: 11.4206  matched_ious: 0.0002
+2026/04/10 21:04:51 - mmengine - INFO - Epoch(train) [1][  70/1630]  lr: 8.5093e-05  eta: 0:24:15  time: 0.8678  data_time: 0.5389  memory: 4580  grad_norm: 2003.0140  loss: 237.2523  loss_heatmap: 215.7162  layer_-1_loss_cls: 10.6991  layer_-1_loss_bbox: 10.8370  matched_ious: 0.0000
+2026/04/10 21:05:00 - mmengine - INFO - Epoch(train) [1][  80/1630]  lr: 8.7761e-05  eta: 0:23:49  time: 0.8630  data_time: 0.5333  memory: 4632  grad_norm: 906.7403  loss: 104.5372  loss_heatmap: 83.9851  layer_-1_loss_cls: 10.0417  layer_-1_loss_bbox: 10.5103  matched_ious: 0.0117
+2026/04/10 21:05:09 - mmengine - INFO - Epoch(train) [1][  90/1630]  lr: 9.0429e-05  eta: 0:23:36  time: 0.8623  data_time: 0.5237  memory: 4662  grad_norm: 449.7019  loss: 57.3386  loss_heatmap: 38.1718  layer_-1_loss_cls: 9.2294  layer_-1_loss_bbox: 9.9374  matched_ious: 0.0063
+2026/04/10 21:05:17 - mmengine - INFO - Epoch(train) [1][ 100/1630]  lr: 9.3096e-05  eta: 0:23:15  time: 0.8623  data_time: 0.5158  memory: 4596  grad_norm: 147.6587  loss: 29.4529  loss_heatmap: 12.4626  layer_-1_loss_cls: 7.9261  layer_-1_loss_bbox: 9.0643  matched_ious: 0.0099
+2026/04/10 21:05:26 - mmengine - INFO - Epoch(train) [1][ 110/1630]  lr: 9.5762e-05  eta: 0:23:00  time: 0.8691  data_time: 0.5204  memory: 4572  grad_norm: 55.6036  loss: 21.5635  loss_heatmap: 5.4713  layer_-1_loss_cls: 7.0877  layer_-1_loss_bbox: 9.0045  matched_ious: 0.0254
+2026/04/10 21:05:34 - mmengine - INFO - Epoch(train) [1][ 120/1630]  lr: 9.8428e-05  eta: 0:22:41  time: 0.8587  data_time: 0.5150  memory: 4597  grad_norm: 33.7049  loss: 18.4614  loss_heatmap: 3.8302  layer_-1_loss_cls: 6.0924  layer_-1_loss_bbox: 8.5387  matched_ious: 0.0069
+2026/04/10 21:05:43 - mmengine - INFO - Epoch(train) [1][ 130/1630]  lr: 1.0109e-04  eta: 0:22:26  time: 0.8592  data_time: 0.5124  memory: 4569  grad_norm: 27.2687  loss: 16.7302  loss_heatmap: 3.3126  layer_-1_loss_cls: 5.0474  layer_-1_loss_bbox: 8.3702  matched_ious: 0.0023
+2026/04/10 21:05:52 - mmengine - INFO - Epoch(train) [1][ 140/1630]  lr: 1.0376e-04  eta: 0:22:15  time: 0.8537  data_time: 0.5137  memory: 4658  grad_norm: 27.4351  loss: 15.7836  loss_heatmap: 3.2545  layer_-1_loss_cls: 4.9442  layer_-1_loss_bbox: 7.5849  matched_ious: 0.0045
+2026/04/10 21:06:00 - mmengine - INFO - Epoch(train) [1][ 150/1630]  lr: 1.0642e-04  eta: 0:22:02  time: 0.8557  data_time: 0.5197  memory: 4582  grad_norm: 30.4914  loss: 15.7262  loss_heatmap: 3.1783  layer_-1_loss_cls: 4.7827  layer_-1_loss_bbox: 7.7652  matched_ious: 0.0000
+2026/04/10 21:06:09 - mmengine - INFO - Epoch(train) [1][ 160/1630]  lr: 1.0908e-04  eta: 0:21:49  time: 0.8530  data_time: 0.5172  memory: 4580  grad_norm: 29.6429  loss: 14.5562  loss_heatmap: 3.1072  layer_-1_loss_cls: 4.3441  layer_-1_loss_bbox: 7.1048  matched_ious: 0.0438
+2026/04/10 21:06:17 - mmengine - INFO - Epoch(train) [1][ 170/1630]  lr: 1.1174e-04  eta: 0:21:35  time: 0.8517  data_time: 0.5089  memory: 4739  grad_norm: 33.4736  loss: 15.0887  loss_heatmap: 3.2072  layer_-1_loss_cls: 4.7559  layer_-1_loss_bbox: 7.1256  matched_ious: 0.0101
+2026/04/10 21:06:25 - mmengine - INFO - Epoch(train) [1][ 180/1630]  lr: 1.1440e-04  eta: 0:21:19  time: 0.8412  data_time: 0.4999  memory: 4654  grad_norm: 33.5729  loss: 15.4496  loss_heatmap: 3.2267  layer_-1_loss_cls: 4.7137  layer_-1_loss_bbox: 7.5093  matched_ious: 0.0024
+2026/04/10 21:06:33 - mmengine - INFO - Epoch(train) [1][ 190/1630]  lr: 1.1706e-04  eta: 0:21:05  time: 0.8294  data_time: 0.4881  memory: 4608  grad_norm: 35.0909  loss: 15.5709  loss_heatmap: 3.2624  layer_-1_loss_cls: 4.7296  layer_-1_loss_bbox: 7.5788  matched_ious: 0.0088
+2026/04/10 21:06:41 - mmengine - INFO - Epoch(train) [1][ 200/1630]  lr: 1.1972e-04  eta: 0:20:53  time: 0.8266  data_time: 0.4830  memory: 4658  grad_norm: 34.6465  loss: 14.4423  loss_heatmap: 3.2218  layer_-1_loss_cls: 4.2123  layer_-1_loss_bbox: 7.0081  matched_ious: 0.0134
+2026/04/10 21:06:50 - mmengine - INFO - Epoch(train) [1][ 210/1630]  lr: 1.2237e-04  eta: 0:20:43  time: 0.8269  data_time: 0.4851  memory: 4762  grad_norm: 51.8106  loss: 15.2379  loss_heatmap: 3.2587  layer_-1_loss_cls: 4.0831  layer_-1_loss_bbox: 7.8961  matched_ious: 0.0353
+2026/04/10 21:06:58 - mmengine - INFO - Epoch(train) [1][ 220/1630]  lr: 1.2503e-04  eta: 0:20:30  time: 0.8236  data_time: 0.4872  memory: 4737  grad_norm: 56.5840  loss: 14.8441  loss_heatmap: 3.2184  layer_-1_loss_cls: 3.7147  layer_-1_loss_bbox: 7.9110  matched_ious: 0.0256
+2026/04/10 21:07:07 - mmengine - INFO - Epoch(train) [1][ 230/1630]  lr: 1.2768e-04  eta: 0:20:19  time: 0.8324  data_time: 0.4958  memory: 4590  grad_norm: 60.6565  loss: 14.1713  loss_heatmap: 3.2175  layer_-1_loss_cls: 3.5482  layer_-1_loss_bbox: 7.4056  matched_ious: 0.0321
+2026/04/10 21:07:14 - mmengine - INFO - Epoch(train) [1][ 240/1630]  lr: 1.3034e-04  eta: 0:20:05  time: 0.8250  data_time: 0.4901  memory: 4578  grad_norm: 58.8598  loss: 14.0860  loss_heatmap: 3.1727  layer_-1_loss_cls: 3.2399  layer_-1_loss_bbox: 7.6735  matched_ious: 0.0363
+2026/04/10 21:07:22 - mmengine - INFO - Epoch(train) [1][ 250/1630]  lr: 1.3299e-04  eta: 0:19:54  time: 0.8204  data_time: 0.4873  memory: 4638  grad_norm: 58.5700  loss: 14.3746  loss_heatmap: 3.2434  layer_-1_loss_cls: 3.2648  layer_-1_loss_bbox: 7.8664  matched_ious: 0.0036
+2026/04/10 21:07:30 - mmengine - INFO - Epoch(train) [1][ 260/1630]  lr: 1.3564e-04  eta: 0:19:41  time: 0.8054  data_time: 0.4673  memory: 4595  grad_norm: 41.1453  loss: 13.6142  loss_heatmap: 3.2219  layer_-1_loss_cls: 2.9868  layer_-1_loss_bbox: 7.4054  matched_ious: 0.0089
+2026/04/10 21:07:38 - mmengine - INFO - Epoch(train) [1][ 270/1630]  lr: 1.3829e-04  eta: 0:19:27  time: 0.7942  data_time: 0.4538  memory: 4637  grad_norm: 38.1257  loss: 13.5907  loss_heatmap: 3.2570  layer_-1_loss_cls: 2.7966  layer_-1_loss_bbox: 7.5371  matched_ious: 0.0030
+2026/04/10 21:07:46 - mmengine - INFO - Epoch(train) [1][ 280/1630]  lr: 1.4093e-04  eta: 0:19:16  time: 0.7898  data_time: 0.4499  memory: 4648  grad_norm: 38.3455  loss: 13.7445  loss_heatmap: 3.3039  layer_-1_loss_cls: 2.6867  layer_-1_loss_bbox: 7.7539  matched_ious: 0.0143
+2026/04/10 21:07:54 - mmengine - INFO - Epoch(train) [1][ 290/1630]  lr: 1.4358e-04  eta: 0:19:07  time: 0.8026  data_time: 0.4611  memory: 4664  grad_norm: 37.2917  loss: 13.2042  loss_heatmap: 3.2881  layer_-1_loss_cls: 2.4505  layer_-1_loss_bbox: 7.4655  matched_ious: 0.0518
+2026/04/10 21:08:02 - mmengine - INFO - Epoch(train) [1][ 300/1630]  lr: 1.4622e-04  eta: 0:18:55  time: 0.7975  data_time: 0.4550  memory: 4579  grad_norm: 34.0107  loss: 13.0375  loss_heatmap: 3.2246  layer_-1_loss_cls: 2.1538  layer_-1_loss_bbox: 7.6591  matched_ious: 0.0173
+2026/04/10 21:08:11 - mmengine - INFO - Epoch(train) [1][ 310/1630]  lr: 1.4886e-04  eta: 0:18:46  time: 0.8067  data_time: 0.4689  memory: 4578  grad_norm: 34.4523  loss: 12.6696  loss_heatmap: 3.2102  layer_-1_loss_cls: 2.1730  layer_-1_loss_bbox: 7.2863  matched_ious: 0.0258
+2026/04/10 21:08:19 - mmengine - INFO - Epoch(train) [1][ 320/1630]  lr: 1.5151e-04  eta: 0:18:35  time: 0.8177  data_time: 0.4832  memory: 4654  grad_norm: 29.2235  loss: 12.0212  loss_heatmap: 3.1508  layer_-1_loss_cls: 1.9228  layer_-1_loss_bbox: 6.9476  matched_ious: 0.0143
+2026/04/10 21:08:27 - mmengine - INFO - Epoch(train) [1][ 330/1630]  lr: 1.5414e-04  eta: 0:18:26  time: 0.8197  data_time: 0.4820  memory: 4765  grad_norm: 30.0586  loss: 11.5878  loss_heatmap: 3.0919  layer_-1_loss_cls: 1.7843  layer_-1_loss_bbox: 6.7117  matched_ious: 0.1045
+2026/04/10 21:08:35 - mmengine - INFO - Epoch(train) [1][ 340/1630]  lr: 1.5678e-04  eta: 0:18:16  time: 0.8139  data_time: 0.4768  memory: 4653  grad_norm: 41.7867  loss: 11.3901  loss_heatmap: 3.0884  layer_-1_loss_cls: 1.8601  layer_-1_loss_bbox: 6.4417  matched_ious: 0.0681
+2026/04/10 21:08:43 - mmengine - INFO - Epoch(train) [1][ 350/1630]  lr: 1.5942e-04  eta: 0:18:06  time: 0.8163  data_time: 0.4826  memory: 4620  grad_norm: 40.5699  loss: 10.4319  loss_heatmap: 3.0748  layer_-1_loss_cls: 1.7424  layer_-1_loss_bbox: 5.6147  matched_ious: 0.0175
+2026/04/10 21:08:52 - mmengine - INFO - Epoch(train) [1][ 360/1630]  lr: 1.6205e-04  eta: 0:17:57  time: 0.8200  data_time: 0.4850  memory: 4601  grad_norm: 58.0727  loss: 11.1057  loss_heatmap: 3.1076  layer_-1_loss_cls: 1.7058  layer_-1_loss_bbox: 6.2923  matched_ious: 0.0106
+2026/04/10 21:09:00 - mmengine - INFO - Epoch(train) [1][ 370/1630]  lr: 1.6468e-04  eta: 0:17:47  time: 0.8191  data_time: 0.4804  memory: 4744  grad_norm: 57.9304  loss: 10.8190  loss_heatmap: 3.0641  layer_-1_loss_cls: 1.5907  layer_-1_loss_bbox: 6.1642  matched_ious: 0.0216
+2026/04/10 21:09:08 - mmengine - INFO - Epoch(train) [1][ 380/1630]  lr: 1.6731e-04  eta: 0:17:39  time: 0.8220  data_time: 0.4839  memory: 4584  grad_norm: 53.2865  loss: 10.8332  loss_heatmap: 3.0102  layer_-1_loss_cls: 1.4539  layer_-1_loss_bbox: 6.3691  matched_ious: 0.0115
+2026/04/10 21:09:17 - mmengine - INFO - Epoch(train) [1][ 390/1630]  lr: 1.6994e-04  eta: 0:17:30  time: 0.8285  data_time: 0.4911  memory: 4711  grad_norm: 42.9476  loss: 11.6749  loss_heatmap: 3.0202  layer_-1_loss_cls: 1.3348  layer_-1_loss_bbox: 7.3199  matched_ious: 0.0103
+2026/04/10 21:09:24 - mmengine - INFO - Epoch(train) [1][ 400/1630]  lr: 1.7257e-04  eta: 0:17:20  time: 0.8251  data_time: 0.4843  memory: 4627  grad_norm: 41.9086  loss: 12.2837  loss_heatmap: 2.9972  layer_-1_loss_cls: 1.3183  layer_-1_loss_bbox: 7.9683  matched_ious: 0.0650
+2026/04/10 21:09:33 - mmengine - INFO - Epoch(train) [1][ 410/1630]  lr: 1.7519e-04  eta: 0:17:10  time: 0.8179  data_time: 0.4779  memory: 4705  grad_norm: 26.3326  loss: 11.9226  loss_heatmap: 2.9864  layer_-1_loss_cls: 1.2852  layer_-1_loss_bbox: 7.6510  matched_ious: 0.0493
+2026/04/10 21:09:41 - mmengine - INFO - Epoch(train) [1][ 420/1630]  lr: 1.7782e-04  eta: 0:17:02  time: 0.8269  data_time: 0.4834  memory: 4604  grad_norm: 24.8335  loss: 12.0508  loss_heatmap: 2.9752  layer_-1_loss_cls: 1.2555  layer_-1_loss_bbox: 7.8201  matched_ious: 0.0160
+2026/04/10 21:09:49 - mmengine - INFO - Epoch(train) [1][ 430/1630]  lr: 1.8044e-04  eta: 0:16:53  time: 0.8250  data_time: 0.4819  memory: 4584  grad_norm: 23.9316  loss: 11.9367  loss_heatmap: 3.0123  layer_-1_loss_cls: 1.2590  layer_-1_loss_bbox: 7.6654  matched_ious: 0.0310
+2026/04/10 21:09:57 - mmengine - INFO - Epoch(train) [1][ 440/1630]  lr: 1.8305e-04  eta: 0:16:44  time: 0.8175  data_time: 0.4725  memory: 4583  grad_norm: 22.3936  loss: 11.2214  loss_heatmap: 2.9776  layer_-1_loss_cls: 1.1892  layer_-1_loss_bbox: 7.0546  matched_ious: 0.0560
+2026/04/10 21:10:06 - mmengine - INFO - Epoch(train) [1][ 450/1630]  lr: 1.8567e-04  eta: 0:16:34  time: 0.8218  data_time: 0.4750  memory: 4568  grad_norm: 22.6112  loss: 11.1194  loss_heatmap: 2.9697  layer_-1_loss_cls: 1.1157  layer_-1_loss_bbox: 7.0340  matched_ious: 0.0067
+2026/04/10 21:10:13 - mmengine - INFO - Epoch(train) [1][ 460/1630]  lr: 1.8829e-04  eta: 0:16:24  time: 0.8101  data_time: 0.4670  memory: 4588  grad_norm: 19.3214  loss: 10.7780  loss_heatmap: 2.9633  layer_-1_loss_cls: 1.0501  layer_-1_loss_bbox: 6.7646  matched_ious: 0.0644
+2026/04/10 21:10:21 - mmengine - INFO - Epoch(train) [1][ 470/1630]  lr: 1.9090e-04  eta: 0:16:13  time: 0.7900  data_time: 0.4482  memory: 4641  grad_norm: 19.6215  loss: 10.7696  loss_heatmap: 2.9682  layer_-1_loss_cls: 1.0090  layer_-1_loss_bbox: 6.7924  matched_ious: 0.0228
+2026/04/10 21:10:29 - mmengine - INFO - Epoch(train) [1][ 480/1630]  lr: 1.9351e-04  eta: 0:16:04  time: 0.7854  data_time: 0.4418  memory: 4751  grad_norm: 18.3392  loss: 10.8845  loss_heatmap: 2.9380  layer_-1_loss_cls: 0.9417  layer_-1_loss_bbox: 7.0048  matched_ious: 0.0143
+2026/04/10 21:10:37 - mmengine - INFO - Epoch(train) [1][ 490/1630]  lr: 1.9611e-04  eta: 0:15:55  time: 0.7860  data_time: 0.4502  memory: 4574  grad_norm: 18.7161  loss: 10.8212  loss_heatmap: 2.9412  layer_-1_loss_cls: 0.9046  layer_-1_loss_bbox: 6.9753  matched_ious: 0.0196
+2026/04/10 21:10:45 - mmengine - INFO - Epoch(train) [1][ 500/1630]  lr: 1.9872e-04  eta: 0:15:46  time: 0.7842  data_time: 0.4492  memory: 4707  grad_norm: 17.4928  loss: 10.4703  loss_heatmap: 2.9333  layer_-1_loss_cls: 0.8928  layer_-1_loss_bbox: 6.6442  matched_ious: 0.0296
+2026/04/10 21:10:53 - mmengine - INFO - Epoch(train) [1][ 510/1630]  lr: 1.9867e-04  eta: 0:15:37  time: 0.7988  data_time: 0.4590  memory: 4724  grad_norm: 18.1484  loss: 10.4058  loss_heatmap: 2.8921  layer_-1_loss_cls: 0.8874  layer_-1_loss_bbox: 6.6262  matched_ious: 0.0086
+2026/04/10 21:11:01 - mmengine - INFO - Epoch(train) [1][ 520/1630]  lr: 1.9861e-04  eta: 0:15:28  time: 0.8080  data_time: 0.4675  memory: 4570  grad_norm: 22.4718  loss: 10.3824  loss_heatmap: 2.8392  layer_-1_loss_cls: 0.8318  layer_-1_loss_bbox: 6.7114  matched_ious: 0.0715
+2026/04/10 21:11:09 - mmengine - INFO - Epoch(train) [1][ 530/1630]  lr: 1.9856e-04  eta: 0:15:18  time: 0.8036  data_time: 0.4656  memory: 4731  grad_norm: 22.1854  loss: 9.7215  loss_heatmap: 2.8446  layer_-1_loss_cls: 0.8268  layer_-1_loss_bbox: 6.0502  matched_ious: 0.0267
+2026/04/10 21:11:16 - mmengine - INFO - Epoch(train) [1][ 540/1630]  lr: 1.9851e-04  eta: 0:15:08  time: 0.7923  data_time: 0.4467  memory: 4563  grad_norm: 21.5156  loss: 9.4854  loss_heatmap: 2.8209  layer_-1_loss_cls: 0.7934  layer_-1_loss_bbox: 5.8710  matched_ious: 0.0355
+2026/04/10 21:11:24 - mmengine - INFO - Epoch(train) [1][ 550/1630]  lr: 1.9845e-04  eta: 0:14:59  time: 0.7900  data_time: 0.4441  memory: 4819  grad_norm: 21.7025  loss: 9.7495  loss_heatmap: 2.8172  layer_-1_loss_cls: 0.7546  layer_-1_loss_bbox: 6.1777  matched_ious: 0.0099
+2026/04/10 21:11:32 - mmengine - INFO - Epoch(train) [1][ 560/1630]  lr: 1.9839e-04  eta: 0:14:50  time: 0.7871  data_time: 0.4418  memory: 4650  grad_norm: 21.4281  loss: 10.0547  loss_heatmap: 2.8419  layer_-1_loss_cls: 0.7029  layer_-1_loss_bbox: 6.5099  matched_ious: 0.0329
+2026/04/10 21:11:41 - mmengine - INFO - Epoch(train) [1][ 570/1630]  lr: 1.9833e-04  eta: 0:14:42  time: 0.7936  data_time: 0.4528  memory: 4675  grad_norm: 20.8329  loss: 9.7867  loss_heatmap: 2.8923  layer_-1_loss_cls: 0.7515  layer_-1_loss_bbox: 6.1429  matched_ious: 0.0567
+2026/04/10 21:11:49 - mmengine - INFO - Epoch(train) [1][ 580/1630]  lr: 1.9828e-04  eta: 0:14:34  time: 0.8029  data_time: 0.4625  memory: 4657  grad_norm: 22.4097  loss: 9.7045  loss_heatmap: 2.8909  layer_-1_loss_cls: 0.7520  layer_-1_loss_bbox: 6.0615  matched_ious: 0.0251
+2026/04/10 21:11:57 - mmengine - INFO - Epoch(train) [1][ 590/1630]  lr: 1.9822e-04  eta: 0:14:24  time: 0.8062  data_time: 0.4656  memory: 4706  grad_norm: 22.6231  loss: 9.7115  loss_heatmap: 2.8970  layer_-1_loss_cls: 0.7176  layer_-1_loss_bbox: 6.0969  matched_ious: 0.0245
+2026/04/10 21:12:04 - mmengine - INFO - Epoch(train) [1][ 600/1630]  lr: 1.9815e-04  eta: 0:14:15  time: 0.8051  data_time: 0.4634  memory: 4642  grad_norm: 25.0198  loss: 9.8199  loss_heatmap: 2.9046  layer_-1_loss_cls: 0.7350  layer_-1_loss_bbox: 6.1803  matched_ious: 0.0190
+2026/04/10 21:12:13 - mmengine - INFO - Epoch(train) [1][ 610/1630]  lr: 1.9809e-04  eta: 0:14:06  time: 0.8042  data_time: 0.4642  memory: 4590  grad_norm: 25.1133  loss: 9.6975  loss_heatmap: 2.8899  layer_-1_loss_cls: 0.7122  layer_-1_loss_bbox: 6.0955  matched_ious: 0.0570
+2026/04/10 21:12:20 - mmengine - INFO - Epoch(train) [1][ 620/1630]  lr: 1.9803e-04  eta: 0:13:57  time: 0.7944  data_time: 0.4502  memory: 4563  grad_norm: 21.7356  loss: 9.7413  loss_heatmap: 2.9096  layer_-1_loss_cls: 0.7050  layer_-1_loss_bbox: 6.1268  matched_ious: 0.0444
+2026/04/10 21:12:28 - mmengine - INFO - Epoch(train) [1][ 630/1630]  lr: 1.9797e-04  eta: 0:13:47  time: 0.7731  data_time: 0.4291  memory: 4599  grad_norm: 23.2781  loss: 10.1989  loss_heatmap: 2.9364  layer_-1_loss_cls: 0.7028  layer_-1_loss_bbox: 6.5598  matched_ious: 0.1055
+2026/04/10 21:12:35 - mmengine - INFO - Epoch(train) [1][ 640/1630]  lr: 1.9790e-04  eta: 0:13:38  time: 0.7741  data_time: 0.4316  memory: 4593  grad_norm: 22.4806  loss: 9.9503  loss_heatmap: 2.9398  layer_-1_loss_cls: 0.7154  layer_-1_loss_bbox: 6.2951  matched_ious: 0.0444
+2026/04/10 21:12:43 - mmengine - INFO - Epoch(train) [1][ 650/1630]  lr: 1.9784e-04  eta: 0:13:29  time: 0.7728  data_time: 0.4304  memory: 4626  grad_norm: 19.9089  loss: 9.5434  loss_heatmap: 2.9388  layer_-1_loss_cls: 0.6831  layer_-1_loss_bbox: 5.9214  matched_ious: 0.0275
+2026/04/10 21:12:51 - mmengine - INFO - Epoch(train) [1][ 660/1630]  lr: 1.9777e-04  eta: 0:13:21  time: 0.7729  data_time: 0.4262  memory: 4583  grad_norm: 18.0262  loss: 9.5985  loss_heatmap: 2.8771  layer_-1_loss_cls: 0.6498  layer_-1_loss_bbox: 6.0716  matched_ious: 0.0339
+2026/04/10 21:13:00 - mmengine - INFO - Epoch(train) [1][ 670/1630]  lr: 1.9770e-04  eta: 0:13:13  time: 0.7852  data_time: 0.4380  memory: 4618  grad_norm: 24.1543  loss: 9.5266  loss_heatmap: 2.8123  layer_-1_loss_cls: 0.6083  layer_-1_loss_bbox: 6.1060  matched_ious: 0.0665
+2026/04/10 21:13:07 - mmengine - INFO - Epoch(train) [1][ 680/1630]  lr: 1.9763e-04  eta: 0:13:03  time: 0.7921  data_time: 0.4430  memory: 4630  grad_norm: 21.1768  loss: 9.4940  loss_heatmap: 2.7645  layer_-1_loss_cls: 0.5774  layer_-1_loss_bbox: 6.1521  matched_ious: 0.0046
+2026/04/10 21:13:15 - mmengine - INFO - Epoch(train) [1][ 690/1630]  lr: 1.9756e-04  eta: 0:12:54  time: 0.7920  data_time: 0.4423  memory: 4707  grad_norm: 21.1652  loss: 9.8374  loss_heatmap: 2.7431  layer_-1_loss_cls: 0.5549  layer_-1_loss_bbox: 6.5394  matched_ious: 0.0801
+2026/04/10 21:13:23 - mmengine - INFO - Epoch(train) [1][ 700/1630]  lr: 1.9749e-04  eta: 0:12:46  time: 0.7959  data_time: 0.4452  memory: 4608  grad_norm: 20.8674  loss: 9.7647  loss_heatmap: 2.7043  layer_-1_loss_cls: 0.5171  layer_-1_loss_bbox: 6.5433  matched_ious: 0.0346
+2026/04/10 21:13:31 - mmengine - INFO - Epoch(train) [1][ 710/1630]  lr: 1.9742e-04  eta: 0:12:38  time: 0.7996  data_time: 0.4471  memory: 4614  grad_norm: 20.8617  loss: 9.3425  loss_heatmap: 2.7131  layer_-1_loss_cls: 0.5174  layer_-1_loss_bbox: 6.1120  matched_ious: 0.0444
+2026/04/10 21:13:39 - mmengine - INFO - Epoch(train) [1][ 720/1630]  lr: 1.9734e-04  eta: 0:12:29  time: 0.7929  data_time: 0.4449  memory: 4655  grad_norm: 13.8406  loss: 9.3302  loss_heatmap: 2.7232  layer_-1_loss_cls: 0.5193  layer_-1_loss_bbox: 6.0877  matched_ious: 0.0579
+2026/04/10 21:13:48 - mmengine - INFO - Epoch(train) [1][ 730/1630]  lr: 1.9727e-04  eta: 0:12:21  time: 0.8067  data_time: 0.4642  memory: 4684  grad_norm: 12.5370  loss: 9.1358  loss_heatmap: 2.6987  layer_-1_loss_cls: 0.4958  layer_-1_loss_bbox: 5.9413  matched_ious: 0.0255
+2026/04/10 21:13:55 - mmengine - INFO - Epoch(train) [1][ 740/1630]  lr: 1.9720e-04  eta: 0:12:12  time: 0.8098  data_time: 0.4701  memory: 4643  grad_norm: 12.9136  loss: 9.2950  loss_heatmap: 2.6823  layer_-1_loss_cls: 0.4974  layer_-1_loss_bbox: 6.1153  matched_ious: 0.0581
+2026/04/10 21:14:04 - mmengine - INFO - Epoch(train) [1][ 750/1630]  lr: 1.9712e-04  eta: 0:12:04  time: 0.8124  data_time: 0.4740  memory: 4583  grad_norm: 15.7652  loss: 9.2775  loss_heatmap: 2.6501  layer_-1_loss_cls: 0.5015  layer_-1_loss_bbox: 6.1259  matched_ious: 0.0681
+2026/04/10 21:14:12 - mmengine - INFO - Epoch(train) [1][ 760/1630]  lr: 1.9704e-04  eta: 0:11:55  time: 0.8081  data_time: 0.4743  memory: 4725  grad_norm: 18.3571  loss: 9.1410  loss_heatmap: 2.6949  layer_-1_loss_cls: 0.5150  layer_-1_loss_bbox: 5.9310  matched_ious: 0.0666
+2026/04/10 21:14:20 - mmengine - INFO - Epoch(train) [1][ 770/1630]  lr: 1.9696e-04  eta: 0:11:47  time: 0.8102  data_time: 0.4735  memory: 4548  grad_norm: 18.7758  loss: 9.2682  loss_heatmap: 2.7017  layer_-1_loss_cls: 0.5290  layer_-1_loss_bbox: 6.0375  matched_ious: 0.0263
+2026/04/10 21:14:28 - mmengine - INFO - Epoch(train) [1][ 780/1630]  lr: 1.9689e-04  eta: 0:11:39  time: 0.8100  data_time: 0.4658  memory: 4733  grad_norm: 19.1995  loss: 9.2552  loss_heatmap: 2.6891  layer_-1_loss_cls: 0.5478  layer_-1_loss_bbox: 6.0183  matched_ious: 0.0664
+2026/04/10 21:14:36 - mmengine - INFO - Epoch(train) [1][ 790/1630]  lr: 1.9681e-04  eta: 0:11:31  time: 0.8159  data_time: 0.4710  memory: 4560  grad_norm: 19.9828  loss: 9.1430  loss_heatmap: 2.6702  layer_-1_loss_cls: 0.5447  layer_-1_loss_bbox: 5.9281  matched_ious: 0.0557
+2026/04/10 21:14:44 - mmengine - INFO - Epoch(train) [1][ 800/1630]  lr: 1.9672e-04  eta: 0:11:22  time: 0.8165  data_time: 0.4712  memory: 4658  grad_norm: 19.0044  loss: 9.2035  loss_heatmap: 2.6860  layer_-1_loss_cls: 0.5735  layer_-1_loss_bbox: 5.9440  matched_ious: 0.0564
+2026/04/10 21:14:52 - mmengine - INFO - Epoch(train) [1][ 810/1630]  lr: 1.9664e-04  eta: 0:11:14  time: 0.8092  data_time: 0.4684  memory: 4583  grad_norm: 17.3473  loss: 9.4021  loss_heatmap: 2.6897  layer_-1_loss_cls: 0.5838  layer_-1_loss_bbox: 6.1286  matched_ious: 0.0595
+2026/04/10 21:15:00 - mmengine - INFO - Epoch(train) [1][ 820/1630]  lr: 1.9656e-04  eta: 0:11:05  time: 0.8012  data_time: 0.4614  memory: 4577  grad_norm: 18.2519  loss: 9.7593  loss_heatmap: 2.6684  layer_-1_loss_cls: 0.5621  layer_-1_loss_bbox: 6.5288  matched_ious: 0.0301
+2026/04/10 21:15:08 - mmengine - INFO - Epoch(train) [1][ 830/1630]  lr: 1.9648e-04  eta: 0:10:56  time: 0.7933  data_time: 0.4556  memory: 4713  grad_norm: 18.8703  loss: 9.7934  loss_heatmap: 2.7049  layer_-1_loss_cls: 0.5494  layer_-1_loss_bbox: 6.5391  matched_ious: 0.0820
+2026/04/10 21:15:16 - mmengine - INFO - Epoch(train) [1][ 840/1630]  lr: 1.9639e-04  eta: 0:10:48  time: 0.7883  data_time: 0.4479  memory: 4614  grad_norm: 18.6601  loss: 9.6196  loss_heatmap: 2.7678  layer_-1_loss_cls: 0.5737  layer_-1_loss_bbox: 6.2782  matched_ious: 0.0433
+2026/04/10 21:15:23 - mmengine - INFO - Epoch(train) [1][ 850/1630]  lr: 1.9630e-04  eta: 0:10:39  time: 0.7762  data_time: 0.4394  memory: 4578  grad_norm: 17.2092  loss: 9.3631  loss_heatmap: 2.7873  layer_-1_loss_cls: 0.5538  layer_-1_loss_bbox: 6.0220  matched_ious: 0.0582
+2026/04/10 21:15:32 - mmengine - INFO - Epoch(train) [1][ 860/1630]  lr: 1.9622e-04  eta: 0:10:31  time: 0.7914  data_time: 0.4502  memory: 4579  grad_norm: 17.6517  loss: 9.2697  loss_heatmap: 2.7141  layer_-1_loss_cls: 0.5260  layer_-1_loss_bbox: 6.0296  matched_ious: 0.0303
+2026/04/10 21:15:40 - mmengine - INFO - Epoch(train) [1][ 870/1630]  lr: 1.9613e-04  eta: 0:10:23  time: 0.8073  data_time: 0.4679  memory: 4606  grad_norm: 15.2781  loss: 8.7996  loss_heatmap: 2.7244  layer_-1_loss_cls: 0.5031  layer_-1_loss_bbox: 5.5722  matched_ious: 0.0189
+2026/04/10 21:15:48 - mmengine - INFO - Epoch(train) [1][ 880/1630]  lr: 1.9604e-04  eta: 0:10:15  time: 0.8080  data_time: 0.4706  memory: 4577  grad_norm: 17.4219  loss: 8.6515  loss_heatmap: 2.8383  layer_-1_loss_cls: 0.5366  layer_-1_loss_bbox: 5.2767  matched_ious: 0.0477
+2026/04/10 21:15:56 - mmengine - INFO - Epoch(train) [1][ 890/1630]  lr: 1.9595e-04  eta: 0:10:06  time: 0.8099  data_time: 0.4681  memory: 4616  grad_norm: 17.4557  loss: 8.8484  loss_heatmap: 2.8564  layer_-1_loss_cls: 0.5516  layer_-1_loss_bbox: 5.4404  matched_ious: 0.0367
+2026/04/10 21:16:04 - mmengine - INFO - Epoch(train) [1][ 900/1630]  lr: 1.9586e-04  eta: 0:09:58  time: 0.8211  data_time: 0.4757  memory: 4655  grad_norm: 17.0851  loss: 8.8227  loss_heatmap: 2.8730  layer_-1_loss_cls: 0.5507  layer_-1_loss_bbox: 5.3990  matched_ious: 0.0449
+2026/04/10 21:16:11 - mmengine - INFO - Epoch(train) [1][ 910/1630]  lr: 1.9577e-04  eta: 0:09:49  time: 0.7965  data_time: 0.4504  memory: 4569  grad_norm: 16.4541  loss: 8.8744  loss_heatmap: 2.9128  layer_-1_loss_cls: 0.5417  layer_-1_loss_bbox: 5.4200  matched_ious: 0.0265
+2026/04/10 21:16:19 - mmengine - INFO - Epoch(train) [1][ 920/1630]  lr: 1.9567e-04  eta: 0:09:41  time: 0.7775  data_time: 0.4326  memory: 4616  grad_norm: 18.1626  loss: 8.7507  loss_heatmap: 2.9028  layer_-1_loss_cls: 0.5496  layer_-1_loss_bbox: 5.2983  matched_ious: 0.0245
+2026/04/10 21:16:27 - mmengine - INFO - Epoch(train) [1][ 930/1630]  lr: 1.9558e-04  eta: 0:09:32  time: 0.7799  data_time: 0.4353  memory: 4718  grad_norm: 15.6793  loss: 9.0304  loss_heatmap: 2.7992  layer_-1_loss_cls: 0.5437  layer_-1_loss_bbox: 5.6875  matched_ious: 0.0420
+2026/04/10 21:16:35 - mmengine - INFO - Epoch(train) [1][ 940/1630]  lr: 1.9549e-04  eta: 0:09:24  time: 0.7811  data_time: 0.4406  memory: 4679  grad_norm: 15.4451  loss: 8.8599  loss_heatmap: 2.7684  layer_-1_loss_cls: 0.4960  layer_-1_loss_bbox: 5.5955  matched_ious: 0.0287
+2026/04/10 21:16:43 - mmengine - INFO - Epoch(train) [1][ 950/1630]  lr: 1.9539e-04  eta: 0:09:16  time: 0.7792  data_time: 0.4393  memory: 4608  grad_norm: 16.1695  loss: 9.1149  loss_heatmap: 2.7463  layer_-1_loss_cls: 0.4840  layer_-1_loss_bbox: 5.8845  matched_ious: 0.0128
+2026/04/10 21:16:51 - mmengine - INFO - Epoch(train) [1][ 960/1630]  lr: 1.9529e-04  eta: 0:09:07  time: 0.7947  data_time: 0.4538  memory: 4600  grad_norm: 17.0335  loss: 8.9919  loss_heatmap: 2.7598  layer_-1_loss_cls: 0.4948  layer_-1_loss_bbox: 5.7374  matched_ious: 0.0886
+2026/04/10 21:17:00 - mmengine - INFO - Epoch(train) [1][ 970/1630]  lr: 1.9520e-04  eta: 0:09:00  time: 0.8218  data_time: 0.4742  memory: 4641  grad_norm: 16.2448  loss: 8.9275  loss_heatmap: 2.8147  layer_-1_loss_cls: 0.5037  layer_-1_loss_bbox: 5.6091  matched_ious: 0.0326
+2026/04/10 21:17:08 - mmengine - INFO - Epoch(train) [1][ 980/1630]  lr: 1.9510e-04  eta: 0:08:51  time: 0.8209  data_time: 0.4721  memory: 4592  grad_norm: 20.9271  loss: 8.4693  loss_heatmap: 2.7978  layer_-1_loss_cls: 0.4715  layer_-1_loss_bbox: 5.2000  matched_ious: 0.0242
+2026/04/10 21:17:16 - mmengine - INFO - Epoch(train) [1][ 990/1630]  lr: 1.9500e-04  eta: 0:08:43  time: 0.8164  data_time: 0.4682  memory: 4725  grad_norm: 21.1238  loss: 8.5141  loss_heatmap: 2.8234  layer_-1_loss_cls: 0.4870  layer_-1_loss_bbox: 5.2037  matched_ious: 0.0694
+2026/04/10 21:17:23 - mmengine - INFO - Exp name: bevfusion_mini_debug_20260410_210326
+2026/04/10 21:17:23 - mmengine - INFO - Epoch(train) [1][1000/1630]  lr: 1.9490e-04  eta: 0:08:34  time: 0.8039  data_time: 0.4589  memory: 4632  grad_norm: 20.1846  loss: 8.3202  loss_heatmap: 2.8405  layer_-1_loss_cls: 0.5117  layer_-1_loss_bbox: 4.9680  matched_ious: 0.0746
+2026/04/10 21:17:31 - mmengine - INFO - Epoch(train) [1][1010/1630]  lr: 1.9479e-04  eta: 0:08:26  time: 0.7957  data_time: 0.4473  memory: 4601  grad_norm: 19.4351  loss: 7.9078  loss_heatmap: 2.8273  layer_-1_loss_cls: 0.5067  layer_-1_loss_bbox: 4.5738  matched_ious: 0.0156
+2026/04/10 21:17:38 - mmengine - INFO - Epoch(train) [1][1020/1630]  lr: 1.9469e-04  eta: 0:08:17  time: 0.7605  data_time: 0.4178  memory: 4681  grad_norm: 19.6332  loss: 8.1211  loss_heatmap: 2.7878  layer_-1_loss_cls: 0.4991  layer_-1_loss_bbox: 4.8342  matched_ious: 0.0546
+2026/04/10 21:17:46 - mmengine - INFO - Epoch(train) [1][1030/1630]  lr: 1.9459e-04  eta: 0:08:09  time: 0.7492  data_time: 0.4060  memory: 4583  grad_norm: 14.7076  loss: 8.1559  loss_heatmap: 2.7502  layer_-1_loss_cls: 0.4953  layer_-1_loss_bbox: 4.9104  matched_ious: 0.0479
+2026/04/10 21:17:53 - mmengine - INFO - Epoch(train) [1][1040/1630]  lr: 1.9448e-04  eta: 0:08:00  time: 0.7472  data_time: 0.4043  memory: 4591  grad_norm: 13.7609  loss: 8.1514  loss_heatmap: 2.6982  layer_-1_loss_cls: 0.4796  layer_-1_loss_bbox: 4.9736  matched_ious: 0.0344
+2026/04/10 21:18:01 - mmengine - INFO - Epoch(train) [1][1050/1630]  lr: 1.9438e-04  eta: 0:07:52  time: 0.7552  data_time: 0.4057  memory: 4580  grad_norm: 14.4680  loss: 8.3266  loss_heatmap: 2.6982  layer_-1_loss_cls: 0.4615  layer_-1_loss_bbox: 5.1669  matched_ious: 0.0497
+2026/04/10 21:18:08 - mmengine - INFO - Epoch(train) [1][1060/1630]  lr: 1.9427e-04  eta: 0:07:43  time: 0.7502  data_time: 0.4040  memory: 4645  grad_norm: 15.5414  loss: 8.5736  loss_heatmap: 2.7102  layer_-1_loss_cls: 0.4767  layer_-1_loss_bbox: 5.3867  matched_ious: 0.1104
+2026/04/10 21:18:15 - mmengine - INFO - Epoch(train) [1][1070/1630]  lr: 1.9416e-04  eta: 0:07:34  time: 0.7455  data_time: 0.3958  memory: 4565  grad_norm: 15.5995  loss: 9.2952  loss_heatmap: 2.7335  layer_-1_loss_cls: 0.4669  layer_-1_loss_bbox: 6.0948  matched_ious: 0.0662
+2026/04/10 21:18:22 - mmengine - INFO - Epoch(train) [1][1080/1630]  lr: 1.9405e-04  eta: 0:07:26  time: 0.7318  data_time: 0.3848  memory: 4553  grad_norm: 19.1245  loss: 9.5103  loss_heatmap: 2.7410  layer_-1_loss_cls: 0.4584  layer_-1_loss_bbox: 6.3109  matched_ious: 0.0595
+2026/04/10 21:18:30 - mmengine - INFO - Epoch(train) [1][1090/1630]  lr: 1.9394e-04  eta: 0:07:17  time: 0.7267  data_time: 0.3807  memory: 4585  grad_norm: 23.2873  loss: 9.5260  loss_heatmap: 2.7154  layer_-1_loss_cls: 0.4676  layer_-1_loss_bbox: 6.3431  matched_ious: 0.0512
+2026/04/10 21:18:37 - mmengine - INFO - Epoch(train) [1][1100/1630]  lr: 1.9383e-04  eta: 0:07:09  time: 0.7219  data_time: 0.3766  memory: 4647  grad_norm: 23.5664  loss: 9.6701  loss_heatmap: 2.6969  layer_-1_loss_cls: 0.4581  layer_-1_loss_bbox: 6.5150  matched_ious: 0.0346
+2026/04/10 21:18:45 - mmengine - INFO - Epoch(train) [1][1110/1630]  lr: 1.9372e-04  eta: 0:07:01  time: 0.7305  data_time: 0.3810  memory: 4570  grad_norm: 22.5849  loss: 9.8207  loss_heatmap: 2.6785  layer_-1_loss_cls: 0.4358  layer_-1_loss_bbox: 6.7065  matched_ious: 0.0419
+2026/04/10 21:18:53 - mmengine - INFO - Epoch(train) [1][1120/1630]  lr: 1.9361e-04  eta: 0:06:52  time: 0.7499  data_time: 0.3999  memory: 4575  grad_norm: 23.8930  loss: 8.8941  loss_heatmap: 2.6328  layer_-1_loss_cls: 0.4409  layer_-1_loss_bbox: 5.8205  matched_ious: 0.0370
+2026/04/10 21:19:01 - mmengine - INFO - Epoch(train) [1][1130/1630]  lr: 1.9350e-04  eta: 0:06:44  time: 0.7718  data_time: 0.4187  memory: 4589  grad_norm: 21.1507  loss: 8.6124  loss_heatmap: 2.6598  layer_-1_loss_cls: 0.4589  layer_-1_loss_bbox: 5.4937  matched_ious: 0.0525
+2026/04/10 21:19:09 - mmengine - INFO - Epoch(train) [1][1140/1630]  lr: 1.9338e-04  eta: 0:06:36  time: 0.7793  data_time: 0.4249  memory: 4751  grad_norm: 17.8597  loss: 8.2687  loss_heatmap: 2.6930  layer_-1_loss_cls: 0.4543  layer_-1_loss_bbox: 5.1213  matched_ious: 0.0277
+2026/04/10 21:19:17 - mmengine - INFO - Epoch(train) [1][1150/1630]  lr: 1.9327e-04  eta: 0:06:28  time: 0.7963  data_time: 0.4425  memory: 4619  grad_norm: 17.4815  loss: 7.9417  loss_heatmap: 2.6969  layer_-1_loss_cls: 0.4551  layer_-1_loss_bbox: 4.7897  matched_ious: 0.0232
+2026/04/10 21:19:25 - mmengine - INFO - Epoch(train) [1][1160/1630]  lr: 1.9315e-04  eta: 0:06:20  time: 0.7915  data_time: 0.4478  memory: 4653  grad_norm: 17.5052  loss: 7.8697  loss_heatmap: 2.7187  layer_-1_loss_cls: 0.4698  layer_-1_loss_bbox: 4.6811  matched_ious: 0.0213
+2026/04/10 21:19:33 - mmengine - INFO - Epoch(train) [1][1170/1630]  lr: 1.9303e-04  eta: 0:06:12  time: 0.7985  data_time: 0.4562  memory: 4724  grad_norm: 16.2329  loss: 7.8658  loss_heatmap: 2.7492  layer_-1_loss_cls: 0.4695  layer_-1_loss_bbox: 4.6472  matched_ious: 0.0103
+2026/04/10 21:19:41 - mmengine - INFO - Epoch(train) [1][1180/1630]  lr: 1.9291e-04  eta: 0:06:04  time: 0.8013  data_time: 0.4605  memory: 4668  grad_norm: 17.4206  loss: 7.8924  loss_heatmap: 2.7296  layer_-1_loss_cls: 0.4487  layer_-1_loss_bbox: 4.7141  matched_ious: 0.0457
+2026/04/10 21:19:49 - mmengine - INFO - Epoch(train) [1][1190/1630]  lr: 1.9280e-04  eta: 0:05:55  time: 0.8027  data_time: 0.4630  memory: 4677  grad_norm: 18.2138  loss: 8.0137  loss_heatmap: 2.7080  layer_-1_loss_cls: 0.4376  layer_-1_loss_bbox: 4.8682  matched_ious: 0.0428
+2026/04/10 21:19:57 - mmengine - INFO - Epoch(train) [1][1200/1630]  lr: 1.9267e-04  eta: 0:05:47  time: 0.7952  data_time: 0.4590  memory: 4564  grad_norm: 107.4465  loss: 8.1613  loss_heatmap: 2.6999  layer_-1_loss_cls: 0.4400  layer_-1_loss_bbox: 5.0214  matched_ious: 0.1038
+2026/04/10 21:20:05 - mmengine - INFO - Epoch(train) [1][1210/1630]  lr: 1.9255e-04  eta: 0:05:39  time: 0.8077  data_time: 0.4694  memory: 4657  grad_norm: 108.0598  loss: 7.9722  loss_heatmap: 2.6669  layer_-1_loss_cls: 0.4268  layer_-1_loss_bbox: 4.8785  matched_ious: 0.1253
+2026/04/10 21:20:13 - mmengine - INFO - Epoch(train) [1][1220/1630]  lr: 1.9243e-04  eta: 0:05:31  time: 0.8016  data_time: 0.4657  memory: 4572  grad_norm: 108.5487  loss: 8.0854  loss_heatmap: 2.6559  layer_-1_loss_cls: 0.4362  layer_-1_loss_bbox: 4.9933  matched_ious: 0.0709
+2026/04/10 21:20:21 - mmengine - INFO - Epoch(train) [1][1230/1630]  lr: 1.9231e-04  eta: 0:05:23  time: 0.8014  data_time: 0.4663  memory: 4575  grad_norm: 119.4848  loss: 7.9991  loss_heatmap: 2.6632  layer_-1_loss_cls: 0.4506  layer_-1_loss_bbox: 4.8854  matched_ious: 0.0447
+2026/04/10 21:20:29 - mmengine - INFO - Epoch(train) [1][1240/1630]  lr: 1.9218e-04  eta: 0:05:15  time: 0.8014  data_time: 0.4651  memory: 4588  grad_norm: 123.0753  loss: 7.9583  loss_heatmap: 2.6638  layer_-1_loss_cls: 0.4574  layer_-1_loss_bbox: 4.8371  matched_ious: 0.0502
+2026/04/10 21:20:37 - mmengine - INFO - Epoch(train) [1][1250/1630]  lr: 1.9206e-04  eta: 0:05:07  time: 0.8051  data_time: 0.4661  memory: 4583  grad_norm: 36.9785  loss: 7.9934  loss_heatmap: 2.6328  layer_-1_loss_cls: 0.4562  layer_-1_loss_bbox: 4.9044  matched_ious: 0.0284
+2026/04/10 21:20:45 - mmengine - INFO - Epoch(train) [1][1260/1630]  lr: 1.9193e-04  eta: 0:04:59  time: 0.8068  data_time: 0.4654  memory: 4598  grad_norm: 36.6072  loss: 8.1525  loss_heatmap: 2.6028  layer_-1_loss_cls: 0.4555  layer_-1_loss_bbox: 5.0942  matched_ious: 0.0323
+2026/04/10 21:20:54 - mmengine - INFO - Epoch(train) [1][1270/1630]  lr: 1.9181e-04  eta: 0:04:51  time: 0.8167  data_time: 0.4699  memory: 4648  grad_norm: 35.9721  loss: 8.2314  loss_heatmap: 2.6021  layer_-1_loss_cls: 0.4429  layer_-1_loss_bbox: 5.1865  matched_ious: 0.0577
+2026/04/10 21:21:02 - mmengine - INFO - Epoch(train) [1][1280/1630]  lr: 1.9168e-04  eta: 0:04:43  time: 0.8160  data_time: 0.4704  memory: 4591  grad_norm: 23.8101  loss: 8.2898  loss_heatmap: 2.5777  layer_-1_loss_cls: 0.4326  layer_-1_loss_bbox: 5.2794  matched_ious: 0.0708
+2026/04/10 21:21:09 - mmengine - INFO - Epoch(train) [1][1290/1630]  lr: 1.9155e-04  eta: 0:04:34  time: 0.8106  data_time: 0.4644  memory: 4709  grad_norm: 20.2393  loss: 8.4340  loss_heatmap: 2.5712  layer_-1_loss_cls: 0.4370  layer_-1_loss_bbox: 5.4258  matched_ious: 0.0307
+2026/04/10 21:21:17 - mmengine - INFO - Epoch(train) [1][1300/1630]  lr: 1.9142e-04  eta: 0:04:26  time: 0.8057  data_time: 0.4606  memory: 4587  grad_norm: 16.5684  loss: 8.5420  loss_heatmap: 2.5716  layer_-1_loss_cls: 0.4404  layer_-1_loss_bbox: 5.5299  matched_ious: 0.0606
+2026/04/10 21:21:25 - mmengine - INFO - Epoch(train) [1][1310/1630]  lr: 1.9129e-04  eta: 0:04:18  time: 0.8024  data_time: 0.4572  memory: 4586  grad_norm: 18.1913  loss: 8.3974  loss_heatmap: 2.5995  layer_-1_loss_cls: 0.4484  layer_-1_loss_bbox: 5.3495  matched_ious: 0.0548
+2026/04/10 21:21:33 - mmengine - INFO - Epoch(train) [1][1320/1630]  lr: 1.9116e-04  eta: 0:04:10  time: 0.7851  data_time: 0.4471  memory: 4576  grad_norm: 17.7850  loss: 8.0862  loss_heatmap: 2.5750  layer_-1_loss_cls: 0.4519  layer_-1_loss_bbox: 5.0593  matched_ious: 0.0407
+2026/04/10 21:21:40 - mmengine - INFO - Epoch(train) [1][1330/1630]  lr: 1.9103e-04  eta: 0:04:02  time: 0.7742  data_time: 0.4336  memory: 4570  grad_norm: 17.5464  loss: 7.9850  loss_heatmap: 2.5763  layer_-1_loss_cls: 0.4589  layer_-1_loss_bbox: 4.9498  matched_ious: 0.0338
+2026/04/10 21:21:49 - mmengine - INFO - Epoch(train) [1][1340/1630]  lr: 1.9089e-04  eta: 0:03:54  time: 0.7882  data_time: 0.4455  memory: 4591  grad_norm: 16.0110  loss: 7.8809  loss_heatmap: 2.6099  layer_-1_loss_cls: 0.4631  layer_-1_loss_bbox: 4.8079  matched_ious: 0.0479
+2026/04/10 21:21:56 - mmengine - INFO - Epoch(train) [1][1350/1630]  lr: 1.9076e-04  eta: 0:03:46  time: 0.7740  data_time: 0.4330  memory: 4673  grad_norm: 16.0783  loss: 7.5301  loss_heatmap: 2.6299  layer_-1_loss_cls: 0.4593  layer_-1_loss_bbox: 4.4409  matched_ious: 0.0235
+2026/04/10 21:22:04 - mmengine - INFO - Epoch(train) [1][1360/1630]  lr: 1.9062e-04  eta: 0:03:37  time: 0.7712  data_time: 0.4314  memory: 4625  grad_norm: 14.0723  loss: 7.6520  loss_heatmap: 2.6709  layer_-1_loss_cls: 0.4716  layer_-1_loss_bbox: 4.5095  matched_ious: 0.0606
+2026/04/10 21:22:11 - mmengine - INFO - Epoch(train) [1][1370/1630]  lr: 1.9049e-04  eta: 0:03:29  time: 0.7666  data_time: 0.4251  memory: 4580  grad_norm: 14.6482  loss: 7.6251  loss_heatmap: 2.7329  layer_-1_loss_cls: 0.4774  layer_-1_loss_bbox: 4.4149  matched_ious: 0.0541
+2026/04/10 21:22:19 - mmengine - INFO - Epoch(train) [1][1380/1630]  lr: 1.9035e-04  eta: 0:03:21  time: 0.7632  data_time: 0.4220  memory: 4677  grad_norm: 14.7002  loss: 7.4583  loss_heatmap: 2.7661  layer_-1_loss_cls: 0.4768  layer_-1_loss_bbox: 4.2154  matched_ious: 0.0569
+2026/04/10 21:22:26 - mmengine - INFO - Epoch(train) [1][1390/1630]  lr: 1.9021e-04  eta: 0:03:13  time: 0.7408  data_time: 0.4031  memory: 4673  grad_norm: 15.4164  loss: 7.5325  loss_heatmap: 2.7071  layer_-1_loss_cls: 0.4596  layer_-1_loss_bbox: 4.3658  matched_ious: 0.0479
+2026/04/10 21:22:33 - mmengine - INFO - Epoch(train) [1][1400/1630]  lr: 1.9007e-04  eta: 0:03:05  time: 0.7429  data_time: 0.4043  memory: 4648  grad_norm: 16.8041  loss: 7.6532  loss_heatmap: 2.6912  layer_-1_loss_cls: 0.4545  layer_-1_loss_bbox: 4.5076  matched_ious: 0.0673
+2026/04/10 21:22:41 - mmengine - INFO - Epoch(train) [1][1410/1630]  lr: 1.8993e-04  eta: 0:02:57  time: 0.7510  data_time: 0.4118  memory: 4652  grad_norm: 18.1975  loss: 7.6630  loss_heatmap: 2.6776  layer_-1_loss_cls: 0.4385  layer_-1_loss_bbox: 4.5468  matched_ious: 0.0529
+2026/04/10 21:22:49 - mmengine - INFO - Epoch(train) [1][1420/1630]  lr: 1.8979e-04  eta: 0:02:49  time: 0.7595  data_time: 0.4189  memory: 4687  grad_norm: 18.8814  loss: 7.8341  loss_heatmap: 2.6484  layer_-1_loss_cls: 0.4431  layer_-1_loss_bbox: 4.7427  matched_ious: 0.0523
+2026/04/10 21:22:57 - mmengine - INFO - Epoch(train) [1][1430/1630]  lr: 1.8965e-04  eta: 0:02:40  time: 0.7672  data_time: 0.4274  memory: 4685  grad_norm: 18.4438  loss: 8.0355  loss_heatmap: 2.6187  layer_-1_loss_cls: 0.4362  layer_-1_loss_bbox: 4.9807  matched_ious: 0.0628
+2026/04/10 21:23:05 - mmengine - INFO - Epoch(train) [1][1440/1630]  lr: 1.8951e-04  eta: 0:02:32  time: 0.7879  data_time: 0.4416  memory: 4626  grad_norm: 18.9022  loss: 7.7423  loss_heatmap: 2.6121  layer_-1_loss_cls: 0.4345  layer_-1_loss_bbox: 4.6957  matched_ious: 0.0514
+2026/04/10 21:23:13 - mmengine - INFO - Epoch(train) [1][1450/1630]  lr: 1.8936e-04  eta: 0:02:24  time: 0.8001  data_time: 0.4519  memory: 4691  grad_norm: 19.6067  loss: 7.7091  loss_heatmap: 2.6706  layer_-1_loss_cls: 0.4440  layer_-1_loss_bbox: 4.5945  matched_ious: 0.0346
+2026/04/10 21:23:20 - mmengine - INFO - Epoch(train) [1][1460/1630]  lr: 1.8922e-04  eta: 0:02:16  time: 0.7790  data_time: 0.4295  memory: 4725  grad_norm: 21.5526  loss: 7.8397  loss_heatmap: 2.7146  layer_-1_loss_cls: 0.4491  layer_-1_loss_bbox: 4.6760  matched_ious: 0.0756
+2026/04/10 21:23:29 - mmengine - INFO - Epoch(train) [1][1470/1630]  lr: 1.8907e-04  eta: 0:02:08  time: 0.7864  data_time: 0.4307  memory: 4619  grad_norm: 21.4818  loss: 7.5952  loss_heatmap: 2.6796  layer_-1_loss_cls: 0.4377  layer_-1_loss_bbox: 4.4780  matched_ious: 0.0264
+2026/04/10 21:23:37 - mmengine - INFO - Epoch(train) [1][1480/1630]  lr: 1.8893e-04  eta: 0:02:00  time: 0.7937  data_time: 0.4373  memory: 4573  grad_norm: 21.7167  loss: 7.5292  loss_heatmap: 2.6621  layer_-1_loss_cls: 0.4388  layer_-1_loss_bbox: 4.4283  matched_ious: 0.0334
+2026/04/10 21:23:46 - mmengine - INFO - Epoch(train) [1][1490/1630]  lr: 1.8878e-04  eta: 0:01:52  time: 0.8073  data_time: 0.4519  memory: 4574  grad_norm: 45.5789  loss: 7.8016  loss_heatmap: 2.6925  layer_-1_loss_cls: 0.4443  layer_-1_loss_bbox: 4.6648  matched_ious: 0.0577
+2026/04/10 21:23:55 - mmengine - INFO - Epoch(train) [1][1500/1630]  lr: 1.8863e-04  eta: 0:01:44  time: 0.8304  data_time: 0.4778  memory: 4620  grad_norm: 44.3714  loss: 7.7223  loss_heatmap: 2.6596  layer_-1_loss_cls: 0.4438  layer_-1_loss_bbox: 4.6189  matched_ious: 0.0616
+2026/04/10 21:24:03 - mmengine - INFO - Epoch(train) [1][1510/1630]  lr: 1.8848e-04  eta: 0:01:36  time: 0.8577  data_time: 0.5011  memory: 4596  grad_norm: 42.8019  loss: 7.5707  loss_heatmap: 2.6210  layer_-1_loss_cls: 0.4387  layer_-1_loss_bbox: 4.5110  matched_ious: 0.0106
+2026/04/10 21:24:12 - mmengine - INFO - Epoch(train) [1][1520/1630]  lr: 1.8833e-04  eta: 0:01:28  time: 0.8616  data_time: 0.5082  memory: 4616  grad_norm: 42.7214  loss: 7.6476  loss_heatmap: 2.6662  layer_-1_loss_cls: 0.4557  layer_-1_loss_bbox: 4.5257  matched_ious: 0.0277
+2026/04/10 21:24:20 - mmengine - INFO - Epoch(train) [1][1530/1630]  lr: 1.8818e-04  eta: 0:01:20  time: 0.8631  data_time: 0.5090  memory: 4631  grad_norm: 42.6736  loss: 7.6641  loss_heatmap: 2.7016  layer_-1_loss_cls: 0.4623  layer_-1_loss_bbox: 4.5002  matched_ious: 0.0664
+2026/04/10 21:24:28 - mmengine - INFO - Epoch(train) [1][1540/1630]  lr: 1.8803e-04  eta: 0:01:12  time: 0.8378  data_time: 0.4917  memory: 4737  grad_norm: 18.7882  loss: 7.5487  loss_heatmap: 2.7154  layer_-1_loss_cls: 0.4636  layer_-1_loss_bbox: 4.3697  matched_ious: 0.0633
+2026/04/10 21:24:36 - mmengine - INFO - Epoch(train) [1][1550/1630]  lr: 1.8788e-04  eta: 0:01:04  time: 0.8179  data_time: 0.4706  memory: 4637  grad_norm: 18.1495  loss: 7.4649  loss_heatmap: 2.6963  layer_-1_loss_cls: 0.4594  layer_-1_loss_bbox: 4.3092  matched_ious: 0.0944
+2026/04/10 21:24:44 - mmengine - INFO - Epoch(train) [1][1560/1630]  lr: 1.8772e-04  eta: 0:00:56  time: 0.8146  data_time: 0.4694  memory: 4628  grad_norm: 16.6736  loss: 7.4079  loss_heatmap: 2.7151  layer_-1_loss_cls: 0.4608  layer_-1_loss_bbox: 4.2320  matched_ious: 0.0096
+2026/04/10 21:24:52 - mmengine - INFO - Epoch(train) [1][1570/1630]  lr: 1.8757e-04  eta: 0:00:48  time: 0.7987  data_time: 0.4521  memory: 4680  grad_norm: 15.3995  loss: 7.2921  loss_heatmap: 2.6782  layer_-1_loss_cls: 0.4447  layer_-1_loss_bbox: 4.1693  matched_ious: 0.0509
+2026/04/10 21:25:00 - mmengine - INFO - Epoch(train) [1][1580/1630]  lr: 1.8741e-04  eta: 0:00:40  time: 0.8049  data_time: 0.4533  memory: 4608  grad_norm: 15.0329  loss: 7.5654  loss_heatmap: 2.6781  layer_-1_loss_cls: 0.4370  layer_-1_loss_bbox: 4.4503  matched_ious: 0.0370
+2026/04/10 21:25:08 - mmengine - INFO - Epoch(train) [1][1590/1630]  lr: 1.8725e-04  eta: 0:00:32  time: 0.8091  data_time: 0.4546  memory: 4594  grad_norm: 18.4615  loss: 7.6447  loss_heatmap: 2.7740  layer_-1_loss_cls: 0.4461  layer_-1_loss_bbox: 4.4246  matched_ious: 0.0465
+2026/04/10 21:25:16 - mmengine - INFO - Epoch(train) [1][1600/1630]  lr: 1.8710e-04  eta: 0:00:24  time: 0.8063  data_time: 0.4534  memory: 4642  grad_norm: 17.9797  loss: 7.7717  loss_heatmap: 2.8117  layer_-1_loss_cls: 0.4413  layer_-1_loss_bbox: 4.5186  matched_ious: 0.0457
+2026/04/10 21:25:24 - mmengine - INFO - Epoch(train) [1][1610/1630]  lr: 1.8694e-04  eta: 0:00:16  time: 0.7933  data_time: 0.4443  memory: 4581  grad_norm: 17.8355  loss: 7.5390  loss_heatmap: 2.7824  layer_-1_loss_cls: 0.4473  layer_-1_loss_bbox: 4.3093  matched_ious: 0.0287
+2026/04/10 21:25:32 - mmengine - INFO - Epoch(train) [1][1620/1630]  lr: 1.8678e-04  eta: 0:00:08  time: 0.7976  data_time: 0.4477  memory: 4640  grad_norm: 18.6827  loss: 7.7532  loss_heatmap: 2.7756  layer_-1_loss_cls: 0.4443  layer_-1_loss_bbox: 4.5332  matched_ious: 0.0262
+2026/04/10 21:25:39 - mmengine - INFO - Exp name: bevfusion_mini_debug_20260410_210326
+2026/04/10 21:25:39 - mmengine - INFO - Epoch(train) [1][1630/1630]  lr: 1.8662e-04  eta: 0:00:00  time: 0.7871  data_time: 0.4452  memory: 4658  grad_norm: 19.5597  loss: 7.5391  loss_heatmap: 2.7564  layer_-1_loss_cls: 0.4480  layer_-1_loss_bbox: 4.3346  matched_ious: 0.0662
+2026/04/10 21:25:39 - mmengine - INFO - Saving checkpoint at 1 epochs
+2026/04/10 21:25:49 - mmengine - INFO - Epoch(val) [1][10/81]    eta: 0:00:46  time: 0.6535  data_time: 0.4794  memory: 2551  
+2026/04/10 21:25:58 - mmengine - INFO - Epoch(val) [1][20/81]    eta: 0:00:46  time: 0.7595  data_time: 0.5800  memory: 2552  
+2026/04/10 21:26:06 - mmengine - INFO - Epoch(val) [1][30/81]    eta: 0:00:39  time: 0.7660  data_time: 0.5869  memory: 2552  
+2026/04/10 21:26:14 - mmengine - INFO - Epoch(val) [1][40/81]    eta: 0:00:31  time: 0.7724  data_time: 0.5934  memory: 2551  
+2026/04/10 21:26:23 - mmengine - INFO - Epoch(val) [1][50/81]    eta: 0:00:24  time: 0.7955  data_time: 0.6158  memory: 2552  
+2026/04/10 21:26:30 - mmengine - INFO - Epoch(val) [1][60/81]    eta: 0:00:16  time: 0.8130  data_time: 0.6328  memory: 2549  
+2026/04/10 21:26:38 - mmengine - INFO - Epoch(val) [1][70/81]    eta: 0:00:08  time: 0.7975  data_time: 0.6173  memory: 2549  
+2026/04/10 21:26:46 - mmengine - INFO - Epoch(val) [1][80/81]    eta: 0:00:00  time: 0.8019  data_time: 0.6236  memory: 2549  
