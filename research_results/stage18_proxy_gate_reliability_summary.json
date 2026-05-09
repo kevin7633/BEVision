@@ -1,0 +1,140 @@
+{
+  "stage": "Stage 18 - proxy reliability gate responsiveness",
+  "date": "2026-05-09",
+  "goal": "Replace the nearly constant learned feature gate with an input-adaptive proxy gate driven by raw camera/LiDAR reliability metadata, then verify clean preservation and severe corruption behavior on nuScenes-mini.",
+  "checkpoint": "/workspace/work_dirs/bevfusion_mini_attention_feature_gate_regularized_gate6_debug_finetune/iter_10.pth",
+  "config": "/workspace/mmdetection3d/projects/BEVFusion/configs/bevfusion_mini_attention_proxy_gate_corruption_runtime_nus-3d.py",
+  "files_modified": [
+    "/workspace/mmdetection3d/projects/BEVFusion/bevfusion/reliability_attention_fusion.py",
+    "/workspace/mmdetection3d/projects/BEVFusion/bevfusion/bevfusion.py",
+    "/workspace/mmdetection3d/projects/BEVFusion/bevfusion/corruptions.py",
+    "/workspace/mmdetection3d/projects/BEVFusion/configs/bevfusion_mini_attention_feature_gate_corruption_runtime_nus-3d.py",
+    "/workspace/scripts/diagnose_attention_gate_residual.py",
+    "/workspace/analysis_results/experiment_summary.csv",
+    "/workspace/analysis_results/experiment_summary.json"
+  ],
+  "files_added": [
+    "/workspace/mmdetection3d/projects/BEVFusion/configs/bevfusion_mini_attention_proxy_gate_corruption_runtime_nus-3d.py",
+    "/workspace/scripts/run_attention_proxy_gate_diagnostics.sh",
+    "/workspace/analysis_results/bevfusion_mini_proxy_gate_iter10_clean_eval_class_metrics.json",
+    "/workspace/analysis_results/bevfusion_mini_proxy_gate_iter10_camera_fog_severe_eval_class_metrics.json",
+    "/workspace/analysis_results/bevfusion_mini_proxy_gate_iter10_lidar_dropout_severe_eval_class_metrics.json"
+  ],
+  "proxy_gate": {
+    "gate_type": "proxy",
+    "proxy_gate_min": 0.0,
+    "proxy_gate_scale": 0.2,
+    "proxy_gate_power": 1.0,
+    "degradation_formula": "max(1 - camera_reliability, 1 - lidar_reliability)",
+    "gate_formula": "proxy_gate_min + proxy_gate_scale * degradation ** proxy_gate_power"
+  },
+  "raw_reliability_proxy": {
+    "camera": "0.20 * brightness_score + 0.70 * contrast_score + 0.10 * sharpness_score",
+    "lidar": "clip(point_count / 300000.0, 0, 1)",
+    "note": "Reliability is a stress-test proxy, not a calibrated physical weather estimator."
+  },
+  "diagnostics_max_samples_10": [
+    {
+      "condition": "clean",
+      "camera_reliability_mean": 0.7363242089748383,
+      "lidar_reliability_mean": 0.7898180067539216,
+      "gate_mean": 0.05312010869383812,
+      "residual_to_base_abs": 0.00005728555770474486,
+      "residual_to_base_l2": 0.000017990398464462488
+    },
+    {
+      "condition": "camera_fog_severe",
+      "camera_reliability_mean": 0.35918945372104644,
+      "lidar_reliability_mean": 0.7898180067539216,
+      "gate_mean": 0.12816211134195327,
+      "residual_to_base_abs": 0.0001570980020915158,
+      "residual_to_base_l2": 0.00005491601114044897
+    },
+    {
+      "condition": "lidar_dropout_severe",
+      "camera_reliability_mean": 0.7363242089748383,
+      "lidar_reliability_mean": 0.35537066757678987,
+      "gate_mean": 0.128925871104002,
+      "residual_to_base_abs": 0.00015323164261644707,
+      "residual_to_base_l2": 0.0000479396589071257
+    },
+    {
+      "condition": "camera_lidar_all_severe",
+      "camera_reliability_mean": 0.5960529148578644,
+      "lidar_reliability_mean": 0.7570943236351013,
+      "gate_mean": 0.08078941777348518,
+      "residual_to_base_abs": 0.000042566030242596756,
+      "residual_to_base_l2": 0.000031276261506718586
+    }
+  ],
+  "eval_results": [
+    {
+      "condition": "clean",
+      "exp_name": "bevfusion_mini_proxy_gate_iter10_clean_eval",
+      "mAP": 0.5598058052618606,
+      "NDS": 0.5684444524792993,
+      "mean_confidence": 0.16312965543702185,
+      "detection_count": 12809,
+      "output_dir": "/workspace/outputs/bevfusion_mini_proxy_gate_iter10_clean_eval/results/pred_instances_3d"
+    },
+    {
+      "condition": "camera_fog_severe",
+      "exp_name": "bevfusion_mini_proxy_gate_iter10_camera_fog_severe_eval",
+      "mAP": 0.5525624004644998,
+      "NDS": 0.5645863065540148,
+      "mean_confidence": 0.14884336319381952,
+      "detection_count": 12989,
+      "output_dir": "/workspace/outputs/bevfusion_mini_proxy_gate_iter10_camera_fog_severe_eval/results/pred_instances_3d"
+    },
+    {
+      "condition": "lidar_dropout_severe",
+      "exp_name": "bevfusion_mini_proxy_gate_iter10_lidar_dropout_severe_eval",
+      "mAP": 0.5428999178939835,
+      "NDS": 0.5542659516023942,
+      "mean_confidence": 0.14198394446121113,
+      "detection_count": 13218,
+      "output_dir": "/workspace/outputs/bevfusion_mini_proxy_gate_iter10_lidar_dropout_severe_eval/results/pred_instances_3d"
+    }
+  ],
+  "comparison": {
+    "baseline_clean": {
+      "mAP": 0.5708258149738618,
+      "NDS": 0.577794914770287
+    },
+    "regularized_gate6_clean": {
+      "mAP": 0.5597665362270707,
+      "NDS": 0.5684221047270919
+    },
+    "proxy_gate_clean_delta_vs_gate6": {
+      "mAP": 0.0000392690347899,
+      "NDS": 0.0000223477522074
+    },
+    "baseline_camera_fog_severe": {
+      "mAP": 0.5583020984997489,
+      "NDS": 0.5713722305567319
+    },
+    "proxy_gate_camera_fog_severe_delta_vs_baseline": {
+      "mAP": -0.0057396980352491,
+      "NDS": -0.0067859240027171
+    },
+    "baseline_lidar_dropout_severe": {
+      "mAP": 0.5439032602221092,
+      "NDS": 0.5557174830797906
+    },
+    "proxy_gate_lidar_dropout_severe_delta_vs_baseline": {
+      "mAP": -0.0010033423281257,
+      "NDS": -0.0014515314773964
+    }
+  },
+  "interpretation": [
+    "The reliability proxy and gate responsiveness are now working: severe fog and severe LiDAR dropout open the gate by more than 2x compared with clean input.",
+    "Clean performance is preserved relative to the previous regularized gate6 attention checkpoint.",
+    "Metric improvement over the original baseline is not established yet; this stage proves mechanism correctness and clean safety, not SOTA gain.",
+    "The residual magnitude is still small, so the next research step should fine-tune with the proxy gate active and corruption-aware batches."
+  ],
+  "next_steps": [
+    "Run a short proxy-gate active finetune with mixed clean/corrupted samples and clean consistency regularization.",
+    "Evaluate clean, camera fog severe, LiDAR dropout severe, and camera+LiDAR all severe after that finetune.",
+    "If residual remains too small, test proxy_gate_scale 0.3 or a learnable residual scale initialized small."
+  ]
+}
