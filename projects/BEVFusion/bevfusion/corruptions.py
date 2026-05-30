@@ -1,10 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-"""Synthetic sensor corruptions for BEVFusion robustness stress tests."""
+"""Sensor corruptions and reliability proxy transforms for BEVFusion."""
 
 from __future__ import annotations
 
 import hashlib
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, List, Sequence
 
 import cv2
 import numpy as np
@@ -14,121 +14,91 @@ from mmcv.transforms import BaseTransform
 from mmdet3d.registry import TRANSFORMS
 
 
-_SEVERITY_LEVELS = {
+_SEVERITY = {
     'mild': 1,
     'moderate': 2,
     'severe': 3,
 }
 
 
-def _severity_id(severity: str) -> int:
-    if severity not in _SEVERITY_LEVELS:
-        raise ValueError(
-            f'Unsupported severity={severity!r}. '
-            f'Expected one of {tuple(_SEVERITY_LEVELS)}.')
-    return _SEVERITY_LEVELS[severity]
+def _level(severity: str) -> int:
+    if severity not in _SEVERITY:
+        raise ValueError(f'Unsupported severity={severity!r}.')
+    return _SEVERITY[severity]
 
 
-def _stable_seed(sample_idx: Any, salt: str, base_seed: int) -> int:
-    key = f'{sample_idx}_{salt}_{base_seed}'.encode('utf-8')
-    return int(hashlib.md5(key).hexdigest()[:8], 16)
+def _stable_seed(sample_idx: Any, salt: str, seed: int) -> int:
+    key = f'{sample_idx}_{salt}_{seed}'.encode('utf-8')
+    return int(hashlib.sha1(key).hexdigest()[:8], 16)
 
 
 def _clip_img(img: np.ndarray) -> np.ndarray:
-    return np.clip(img, 0, 255).astype(np.float32)
+    return np.clip(img, 0.0, 255.0).astype(np.float32)
 
 
 @TRANSFORMS.register_module()
 class BEVFusionCameraCorruption(BaseTransform):
-    """Apply deterministic multi-view image corruptions in the data pipeline.
+    """Deterministic camera corruptions for robustness evaluation.
 
-    Args:
-        corruption_type: One of ``low_light``, ``contrast``, ``fog``,
-            ``gaussian_noise``, ``gaussian_blur``, ``occlusion`` or ``all``.
-        severity: ``mild``, ``moderate`` or ``severe``.
-        seed: Base seed. The actual RNG seed also uses ``sample_idx`` and view
-            index so repeated evaluation stays deterministic.
+    Supported types are ``brightness_down``, ``contrast_down``, ``blur``,
+    ``dropout_camera``, ``fog`` and ``all``.
     """
 
     def __init__(self,
-                 corruption_type: str = 'fog',
+                 corruption_type: str = 'brightness_down',
                  severity: str = 'mild',
                  seed: int = 0,
                  apply_prob: float = 1.0) -> None:
         self.corruption_type = corruption_type
         self.severity = severity
-        self.level = _severity_id(severity)
+        self.level = _level(severity)
         self.seed = seed
         self.apply_prob = apply_prob
 
-    def _rng(self, results: Dict[str, Any], view_idx: int) -> np.random.Generator:
+    def _rng(self, results: Dict[str, Any],
+             view_idx: int) -> np.random.Generator:
         sample_idx = results.get('sample_idx', 'unknown')
         return np.random.default_rng(
             _stable_seed(sample_idx, f'camera_{view_idx}', self.seed))
 
-    def _low_light(self, img: np.ndarray) -> np.ndarray:
-        factors = {1: 0.75, 2: 0.55, 3: 0.35}
-        return img * factors[self.level]
+    def _brightness_down(self, img: np.ndarray) -> np.ndarray:
+        return img * {1: 0.75, 2: 0.55, 3: 0.35}[self.level]
 
-    def _contrast(self, img: np.ndarray) -> np.ndarray:
-        factors = {1: 0.75, 2: 0.50, 3: 0.30}
+    def _contrast_down(self, img: np.ndarray) -> np.ndarray:
+        factor = {1: 0.75, 2: 0.50, 3: 0.30}[self.level]
         mean = img.mean(axis=(0, 1), keepdims=True)
-        return (img - mean) * factors[self.level] + mean
+        return (img - mean) * factor + mean
+
+    def _blur(self, img: np.ndarray) -> np.ndarray:
+        kernel = {1: 3, 2: 5, 3: 9}[self.level]
+        return cv2.GaussianBlur(img, (kernel, kernel), sigmaX=0)
 
     def _fog(self, img: np.ndarray) -> np.ndarray:
-        alphas = {1: 0.18, 2: 0.35, 3: 0.55}
-        return img * (1.0 - alphas[self.level]) + 255.0 * alphas[self.level]
-
-    def _gaussian_noise(self, img: np.ndarray,
-                        rng: np.random.Generator) -> np.ndarray:
-        sigmas = {1: 8.0, 2: 18.0, 3: 32.0}
-        return img + rng.normal(0.0, sigmas[self.level], size=img.shape)
-
-    def _gaussian_blur(self, img: np.ndarray) -> np.ndarray:
-        kernels = {1: 3, 2: 5, 3: 9}
-        ksize = kernels[self.level]
-        return cv2.GaussianBlur(img, (ksize, ksize), sigmaX=0)
-
-    def _occlusion(self, img: np.ndarray,
-                   rng: np.random.Generator) -> np.ndarray:
-        h, w = img.shape[:2]
-        out = img.copy()
-        counts = {1: 2, 2: 4, 3: 7}
-        area_fracs = {1: 0.03, 2: 0.06, 3: 0.10}
-        rect_area = max(1, int(h * w * area_fracs[self.level]))
-        for _ in range(counts[self.level]):
-            aspect = rng.uniform(0.5, 2.0)
-            rect_h = max(1, int(np.sqrt(rect_area / aspect)))
-            rect_w = max(1, int(rect_h * aspect))
-            y0 = int(rng.integers(0, max(1, h - rect_h + 1)))
-            x0 = int(rng.integers(0, max(1, w - rect_w + 1)))
-            fill = rng.uniform(0, 45, size=(1, 1, img.shape[2]))
-            out[y0:y0 + rect_h, x0:x0 + rect_w] = fill
-        return out
+        alpha = {1: 0.18, 2: 0.35, 3: 0.55}[self.level]
+        return img * (1.0 - alpha) + 255.0 * alpha
 
     def _apply_one(self, img: np.ndarray,
                    rng: np.random.Generator) -> np.ndarray:
-        ctype = self.corruption_type
-        if ctype == 'low_light':
-            img = self._low_light(img)
-        elif ctype == 'contrast':
-            img = self._contrast(img)
-        elif ctype == 'fog':
+        kind = self.corruption_type
+        if kind == 'brightness_down':
+            img = self._brightness_down(img)
+        elif kind == 'contrast_down':
+            img = self._contrast_down(img)
+        elif kind == 'blur':
+            img = self._blur(img)
+        elif kind == 'fog':
             img = self._fog(img)
-        elif ctype == 'gaussian_noise':
-            img = self._gaussian_noise(img, rng)
-        elif ctype == 'gaussian_blur':
-            img = self._gaussian_blur(img)
-        elif ctype == 'occlusion':
-            img = self._occlusion(img, rng)
-        elif ctype == 'all':
-            img = self._low_light(img)
-            img = self._contrast(img)
+        elif kind == 'dropout_camera':
+            # View-level dropout is handled in transform() so all pixels in the
+            # selected camera are removed consistently.
+            pass
+        elif kind == 'all':
+            img = self._brightness_down(img)
+            img = self._contrast_down(img)
+            img = self._blur(img)
             img = self._fog(img)
-            img = self._gaussian_blur(img)
-            img = self._gaussian_noise(img, rng)
         else:
-            raise ValueError(f'Unsupported camera corruption: {ctype}')
+            raise ValueError(f'Unsupported camera corruption: {kind}')
         return _clip_img(img)
 
     def transform(self, results: Dict[str, Any]) -> Dict[str, Any]:
@@ -137,10 +107,21 @@ class BEVFusionCameraCorruption(BaseTransform):
             _stable_seed(sample_idx, 'camera_apply', self.seed))
         if apply_rng.random() >= self.apply_prob:
             return results
-        results['img'] = [
-            self._apply_one(img.astype(np.float32), self._rng(results, idx))
-            for idx, img in enumerate(results['img'])
-        ]
+
+        imgs = [img.astype(np.float32) for img in results['img']]
+        if self.corruption_type == 'dropout_camera':
+            counts = {1: 1, 2: 2, 3: 3}
+            view_count = len(imgs)
+            drop_num = min(counts[self.level], view_count)
+            chosen = apply_rng.choice(view_count, size=drop_num, replace=False)
+            for idx in chosen:
+                imgs[int(idx)] = np.zeros_like(imgs[int(idx)])
+        else:
+            imgs = [
+                self._apply_one(img, self._rng(results, idx))
+                for idx, img in enumerate(imgs)
+            ]
+        results['img'] = imgs
         results['camera_corruption'] = dict(
             type=self.corruption_type, severity=self.severity)
         return results
@@ -148,108 +129,47 @@ class BEVFusionCameraCorruption(BaseTransform):
 
 @TRANSFORMS.register_module()
 class BEVFusionLiDARCorruption(BaseTransform):
-    """Apply deterministic point-cloud corruptions in the data pipeline.
-
-    Args:
-        corruption_type: One of ``random_dropout``, ``distance_dropout``,
-            ``intensity_noise``, ``noisy_points`` or ``all``.
-        severity: ``mild``, ``moderate`` or ``severe``.
-        seed: Base seed used together with ``sample_idx`` for deterministic
-            evaluation.
-        point_cloud_range: Range used when synthetic noisy points are added.
-    """
+    """Deterministic LiDAR corruptions for robustness evaluation."""
 
     def __init__(self,
-                 corruption_type: str = 'random_dropout',
+                 corruption_type: str = 'point_dropout',
                  severity: str = 'mild',
                  seed: int = 0,
-                 apply_prob: float = 1.0,
-                 point_cloud_range: Sequence[float] = (-54.0, -54.0, -5.0,
-                                                       54.0, 54.0, 3.0)
-                 ) -> None:
+                 apply_prob: float = 1.0) -> None:
         self.corruption_type = corruption_type
         self.severity = severity
-        self.level = _severity_id(severity)
+        self.level = _level(severity)
         self.seed = seed
         self.apply_prob = apply_prob
-        self.point_cloud_range = tuple(point_cloud_range)
 
     def _rng(self, results: Dict[str, Any]) -> np.random.Generator:
         sample_idx = results.get('sample_idx', 'unknown')
-        return np.random.default_rng(_stable_seed(sample_idx, 'lidar',
-                                                  self.seed))
+        return np.random.default_rng(
+            _stable_seed(sample_idx, 'lidar', self.seed))
 
     def _keep_mask(self, n: int, keep_prob: torch.Tensor,
-                   rng: np.random.Generator, device: torch.device) -> torch.Tensor:
+                   rng: np.random.Generator,
+                   device: torch.device) -> torch.Tensor:
         random_values = torch.from_numpy(rng.random(n)).to(device=device)
         return random_values < keep_prob
 
-    def _random_dropout(self, tensor: torch.Tensor,
-                        rng: np.random.Generator) -> torch.Tensor:
+    def _point_dropout(self, points: torch.Tensor,
+                       rng: np.random.Generator) -> torch.Tensor:
         rates = {1: 0.15, 2: 0.35, 3: 0.55}
-        keep_prob = torch.full((tensor.shape[0], ), 1.0 - rates[self.level],
-                               device=tensor.device)
-        mask = self._keep_mask(tensor.shape[0], keep_prob, rng, tensor.device)
-        return tensor[mask]
+        keep_prob = torch.full((points.shape[0], ),
+                               1.0 - rates[self.level],
+                               device=points.device)
+        return points[self._keep_mask(points.shape[0], keep_prob, rng,
+                                      points.device)]
 
-    def _distance_dropout(self, tensor: torch.Tensor,
+    def _distance_dropout(self, points: torch.Tensor,
                           rng: np.random.Generator) -> torch.Tensor:
         max_rates = {1: 0.20, 2: 0.45, 3: 0.70}
-        dist = torch.linalg.norm(tensor[:, :2], dim=1)
-        scaled = torch.clamp(dist / 54.0, min=0.0, max=1.0)
-        drop_prob = max_rates[self.level] * scaled
+        distance = torch.linalg.norm(points[:, :2], dim=1)
+        drop_prob = max_rates[self.level] * (distance / 54.0).clamp(0.0, 1.0)
         keep_prob = 1.0 - drop_prob
-        mask = self._keep_mask(tensor.shape[0], keep_prob, rng, tensor.device)
-        return tensor[mask]
-
-    def _intensity_noise(self, tensor: torch.Tensor,
-                         rng: np.random.Generator) -> torch.Tensor:
-        if tensor.shape[1] < 4:
-            return tensor
-        sigmas = {1: 0.03, 2: 0.08, 3: 0.15}
-        noise = torch.from_numpy(
-            rng.normal(0.0, sigmas[self.level],
-                       size=(tensor.shape[0], ))).to(
-                           device=tensor.device, dtype=tensor.dtype)
-        out = tensor.clone()
-        out[:, 3] = torch.clamp(out[:, 3] + noise, min=0.0, max=1.0)
-        return out
-
-    def _noisy_points(self, tensor: torch.Tensor,
-                      rng: np.random.Generator) -> torch.Tensor:
-        ratios = {1: 0.03, 2: 0.07, 3: 0.12}
-        n_noise = int(tensor.shape[0] * ratios[self.level])
-        if n_noise <= 0:
-            return tensor
-        x_min, y_min, z_min, x_max, y_max, z_max = self.point_cloud_range
-        noise_np = np.zeros((n_noise, tensor.shape[1]), dtype=np.float32)
-        noise_np[:, 0] = rng.uniform(x_min, x_max, size=n_noise)
-        noise_np[:, 1] = rng.uniform(y_min, y_max, size=n_noise)
-        noise_np[:, 2] = rng.uniform(z_min, z_max, size=n_noise)
-        if tensor.shape[1] > 3:
-            noise_np[:, 3] = rng.uniform(0.0, 0.2, size=n_noise)
-        noise = torch.as_tensor(noise_np, device=tensor.device,
-                                dtype=tensor.dtype)
-        return torch.cat([tensor, noise], dim=0)
-
-    def _apply_tensor(self, tensor: torch.Tensor,
-                      rng: np.random.Generator) -> torch.Tensor:
-        ctype = self.corruption_type
-        if ctype == 'random_dropout':
-            tensor = self._random_dropout(tensor, rng)
-        elif ctype == 'distance_dropout':
-            tensor = self._distance_dropout(tensor, rng)
-        elif ctype == 'intensity_noise':
-            tensor = self._intensity_noise(tensor, rng)
-        elif ctype == 'noisy_points':
-            tensor = self._noisy_points(tensor, rng)
-        elif ctype == 'all':
-            tensor = self._distance_dropout(tensor, rng)
-            tensor = self._intensity_noise(tensor, rng)
-            tensor = self._noisy_points(tensor, rng)
-        else:
-            raise ValueError(f'Unsupported LiDAR corruption: {ctype}')
-        return tensor
+        return points[self._keep_mask(points.shape[0], keep_prob, rng,
+                                      points.device)]
 
     def transform(self, results: Dict[str, Any]) -> Dict[str, Any]:
         sample_idx = results.get('sample_idx', 'unknown')
@@ -258,8 +178,18 @@ class BEVFusionLiDARCorruption(BaseTransform):
         if apply_rng.random() >= self.apply_prob:
             return results
         points = results['points']
+        tensor = points.tensor
         rng = self._rng(results)
-        tensor = self._apply_tensor(points.tensor, rng)
+        if self.corruption_type == 'point_dropout':
+            tensor = self._point_dropout(tensor, rng)
+        elif self.corruption_type == 'distance_dropout':
+            tensor = self._distance_dropout(tensor, rng)
+        elif self.corruption_type == 'all':
+            tensor = self._distance_dropout(tensor, rng)
+            tensor = self._point_dropout(tensor, rng)
+        else:
+            raise ValueError(f'Unsupported LiDAR corruption: '
+                             f'{self.corruption_type}')
         results['points'] = points.new_point(tensor)
         results['lidar_corruption'] = dict(
             type=self.corruption_type, severity=self.severity)
@@ -267,56 +197,93 @@ class BEVFusionLiDARCorruption(BaseTransform):
 
 
 @TRANSFORMS.register_module()
-class BEVFusionSensorReliabilityProxy(BaseTransform):
-    """Compute raw sensor reliability proxies before model preprocessing.
+class BEVFusionSensorReliability(BaseTransform):
+    """Compute bounded image and LiDAR reliability proxies.
 
-    This transform should run after optional camera/LiDAR corruption and before
-    packing. It does not use corruption labels; it only reads the current image
-    pixels and point tensor.
+    The transform runs before packing so image reliability is computed on pixel
+    values before normalization. It records both per-camera scores and a
+    scene-level average in the metainfo.
     """
 
     def __init__(self,
+                 brightness_target: float = 127.5,
+                 brightness_tolerance: float = 127.5,
+                 contrast_ref: float = 65.0,
+                 sharpness_ref: float = 120.0,
                  lidar_count_ref: float = 300000.0,
-                 image_contrast_ref: float = 65.0,
-                 image_sharpness_ref: float = 18.0) -> None:
+                 image_weights: Sequence[float] = (0.25, 0.45, 0.30),
+                 compute_lidar_bev_map: bool = False,
+                 bev_map_size: Sequence[int] = (32, 32),
+                 point_cloud_range: Sequence[float] = (-54.0, -54.0, -5.0,
+                                                       54.0, 54.0, 3.0)
+                 ) -> None:
+        self.brightness_target = brightness_target
+        self.brightness_tolerance = brightness_tolerance
+        self.contrast_ref = contrast_ref
+        self.sharpness_ref = sharpness_ref
         self.lidar_count_ref = lidar_count_ref
-        self.image_contrast_ref = image_contrast_ref
-        self.image_sharpness_ref = image_sharpness_ref
+        self.image_weights = tuple(image_weights)
+        self.compute_lidar_bev_map = compute_lidar_bev_map
+        self.bev_map_size = tuple(bev_map_size)
+        self.point_cloud_range = tuple(point_cloud_range)
 
-    def _camera_proxy(self, imgs: Sequence[np.ndarray]) -> Dict[str, float]:
-        stacked = np.stack([img.astype(np.float32) for img in imgs], axis=0)
-        brightness = float(stacked.mean())
-        contrast = float(stacked.std())
-        gray = stacked.mean(axis=-1)
-        dx = float(np.abs(gray[:, :, 1:] - gray[:, :, :-1]).mean())
-        dy = float(np.abs(gray[:, 1:, :] - gray[:, :-1, :]).mean())
-        sharpness = 0.5 * (dx + dy)
+    def _camera_scores(self, imgs: Sequence[np.ndarray]) -> Dict[str, Any]:
+        per_view: List[float] = []
+        brightness_values: List[float] = []
+        contrast_values: List[float] = []
+        sharpness_values: List[float] = []
+        wb, wc, ws = self.image_weights
+        for img in imgs:
+            img_f = img.astype(np.float32)
+            gray = cv2.cvtColor(_clip_img(img_f).astype(np.uint8),
+                                cv2.COLOR_BGR2GRAY).astype(np.float32)
+            brightness = float(gray.mean())
+            contrast = float(gray.std())
+            sharpness = float(cv2.Laplacian(gray, cv2.CV_32F).var())
+            brightness_score = np.clip(
+                1.0 - abs(brightness - self.brightness_target) /
+                self.brightness_tolerance, 0.0, 1.0)
+            contrast_score = np.clip(contrast / self.contrast_ref, 0.0, 1.0)
+            sharpness_score = np.clip(sharpness / self.sharpness_ref, 0.0,
+                                      1.0)
+            reliability = wb * brightness_score + wc * contrast_score + ws * sharpness_score
+            per_view.append(float(np.clip(reliability, 0.0, 1.0)))
+            brightness_values.append(brightness)
+            contrast_values.append(contrast)
+            sharpness_values.append(sharpness)
 
-        brightness_score = np.clip(1.0 - abs(brightness - 120.0) / 150.0,
-                                   0.0, 1.0)
-        contrast_score = np.clip(contrast / self.image_contrast_ref, 0.0, 1.0)
-        sharpness_score = np.clip(sharpness / self.image_sharpness_ref, 0.0,
-                                  1.0)
-        reliability = (
-            0.20 * brightness_score + 0.70 * contrast_score +
-            0.10 * sharpness_score)
         return dict(
-            camera_reliability_proxy=float(np.clip(reliability, 0.0, 1.0)),
-            camera_brightness=float(brightness),
-            camera_contrast=float(contrast),
-            camera_sharpness=float(sharpness))
+            image_reliability=float(np.mean(per_view)),
+            image_reliability_per_view=per_view,
+            image_brightness_per_view=brightness_values,
+            image_contrast_per_view=contrast_values,
+            image_sharpness_per_view=sharpness_values)
 
-    def _lidar_proxy(self, points: Any) -> Dict[str, float]:
+    def _lidar_bev_map(self, tensor: torch.Tensor) -> np.ndarray:
+        x_min, y_min, _, x_max, y_max, _ = self.point_cloud_range
+        points = tensor[:, :2].detach().cpu().numpy()
+        hist, _, _ = np.histogram2d(
+            points[:, 1],
+            points[:, 0],
+            bins=self.bev_map_size,
+            range=[[y_min, y_max], [x_min, x_max]])
+        ref = max(float(hist.mean()) * 2.0, 1.0)
+        return np.clip(hist / ref, 0.0, 1.0).astype(np.float32)
+
+    def _lidar_scores(self, points: Any) -> Dict[str, Any]:
         tensor = points.tensor
         point_count = float(tensor.shape[0])
-        reliability = np.clip(point_count / self.lidar_count_ref, 0.0, 1.0)
-        return dict(
-            lidar_reliability_proxy=float(reliability),
-            lidar_point_count=float(point_count))
+        out = dict(
+            lidar_reliability=float(
+                np.clip(point_count / self.lidar_count_ref, 0.0, 1.0)),
+            lidar_point_count=point_count)
+        if self.compute_lidar_bev_map and tensor.shape[0] > 0:
+            out['lidar_reliability_map'] = self._lidar_bev_map(tensor)
+        return out
 
     def transform(self, results: Dict[str, Any]) -> Dict[str, Any]:
         if 'img' in results:
-            results.update(self._camera_proxy(results['img']))
+            results.update(self._camera_scores(results['img']))
         if 'points' in results:
-            results.update(self._lidar_proxy(results['points']))
+            results.update(self._lidar_scores(results['points']))
         return results

@@ -25,6 +25,7 @@ class BEVFusion(Base3DDetector):
         pts_voxel_encoder: Optional[dict] = None,
         pts_middle_encoder: Optional[dict] = None,
         fusion_layer: Optional[dict] = None,
+        reliability_fusion_layer: Optional[dict] = None,
         attention_fusion_layer: Optional[dict] = None,
         img_backbone: Optional[dict] = None,
         pts_backbone: Optional[dict] = None,
@@ -34,7 +35,7 @@ class BEVFusion(Base3DDetector):
         bbox_head: Optional[dict] = None,
         init_cfg: OptMultiConfig = None,
         seg_head: Optional[dict] = None,
-        train_attention_only: bool = False,
+        train_reliability_only: bool = False,
         **kwargs,
     ) -> None:
         voxelize_cfg = data_preprocessor.pop('voxelize_cfg')
@@ -56,9 +57,11 @@ class BEVFusion(Base3DDetector):
 
         self.fusion_layer = MODELS.build(
             fusion_layer) if fusion_layer is not None else None
-        self.attention_fusion_layer = MODELS.build(
-            attention_fusion_layer
-        ) if attention_fusion_layer is not None else None
+        if reliability_fusion_layer is None:
+            reliability_fusion_layer = attention_fusion_layer
+        self.reliability_fusion_layer = MODELS.build(
+            reliability_fusion_layer
+        ) if reliability_fusion_layer is not None else None
 
         self.pts_backbone = MODELS.build(pts_backbone)
         self.pts_neck = MODELS.build(pts_neck)
@@ -66,16 +69,16 @@ class BEVFusion(Base3DDetector):
         self.bbox_head = MODELS.build(bbox_head)
 
         self.init_weights()
-        if train_attention_only:
-            self._set_attention_only_trainable()
+        if train_reliability_only:
+            self._set_reliability_only_trainable()
 
-    def _set_attention_only_trainable(self) -> None:
+    def _set_reliability_only_trainable(self) -> None:
+        if self.reliability_fusion_layer is None:
+            raise ValueError('train_reliability_only=True requires '
+                             'reliability_fusion_layer.')
         for param in self.parameters():
             param.requires_grad = False
-        if self.attention_fusion_layer is None:
-            raise ValueError(
-                'train_attention_only=True requires attention_fusion_layer.')
-        for param in self.attention_fusion_layer.parameters():
+        for param in self.reliability_fusion_layer.parameters():
             param.requires_grad = True
 
     def _forward(self,
@@ -216,58 +219,87 @@ class BEVFusion(Base3DDetector):
 
         return feats, coords, sizes
 
-    def _sensor_reliability_proxies(self, batch_inputs_dict) -> dict:
-        """Compute lightweight input-level reliability proxies.
+    def _collect_sensor_reliability(self, batch_inputs_dict,
+                                    batch_input_metas) -> dict:
+        """Collect reliability proxies from metainfo or compute fallbacks."""
+        device = None
+        if batch_inputs_dict.get('imgs', None) is not None:
+            device = batch_inputs_dict['imgs'].device
+        elif batch_inputs_dict.get('points', None):
+            device = batch_inputs_dict['points'][0].device
+        if device is None:
+            device = torch.device('cpu')
 
-        The values are intentionally simple and bounded in [0, 1]. They are
-        used only as stress-test proxies, not as calibrated physical weather
-        estimators.
-        """
-        proxies = {}
-        metas = batch_inputs_dict.get('batch_input_metas', None)
-        if metas is not None:
-            if all('camera_reliability_proxy' in meta for meta in metas):
-                proxies['camera'] = torch.tensor(
-                    [meta['camera_reliability_proxy'] for meta in metas],
-                    device=batch_inputs_dict['imgs'].device,
-                    dtype=torch.float32)
-            if all('lidar_reliability_proxy' in meta for meta in metas):
-                device = batch_inputs_dict['points'][0].device
-                proxies['lidar'] = torch.tensor(
-                    [meta['lidar_reliability_proxy'] for meta in metas],
-                    device=device,
-                    dtype=torch.float32)
-            if 'camera' in proxies and 'lidar' in proxies:
-                return proxies
+        reliability = {}
+        image_values = []
+        per_view_values = []
+        lidar_values = []
+        for meta in batch_input_metas:
+            image_value = meta.get('image_reliability',
+                                   meta.get('camera_reliability_proxy', None))
+            lidar_value = meta.get('lidar_reliability',
+                                   meta.get('lidar_reliability_proxy', None))
+            if image_value is not None:
+                image_values.append(float(image_value))
+            if lidar_value is not None:
+                lidar_values.append(float(lidar_value))
+            if 'image_reliability_per_view' in meta:
+                per_view_values.append(meta['image_reliability_per_view'])
+
+        batch_size = len(batch_input_metas)
+        if len(image_values) == batch_size:
+            reliability['image'] = torch.tensor(
+                image_values, device=device, dtype=torch.float32)
+        if len(lidar_values) == batch_size:
+            reliability['lidar'] = torch.tensor(
+                lidar_values, device=device, dtype=torch.float32)
+        if len(per_view_values) == batch_size:
+            reliability['image_per_view'] = torch.tensor(
+                per_view_values, device=device, dtype=torch.float32)
+
         imgs = batch_inputs_dict.get('imgs', None)
-        if imgs is not None:
+        if 'image' not in reliability and imgs is not None:
             img = imgs.detach().float()
-            if img.max() <= 5.0:
-                img = img * 255.0
-            # Shape: [B, N, C, H, W]. Camera corruptions such as fog,
-            # low-light, blur and contrast loss reduce one or more of these.
-            brightness = img.mean(dim=(1, 2, 3, 4))
-            contrast = img.std(dim=(1, 2, 3, 4), unbiased=False)
-            gray = img.mean(dim=2)
-            dx = (gray[..., 1:] - gray[..., :-1]).abs().mean(dim=(1, 2, 3))
-            dy = (gray[..., 1:, :] - gray[..., :-1, :]).abs().mean(
-                dim=(1, 2, 3))
-            sharpness = 0.5 * (dx + dy)
-            brightness_score = (
-                1.0 - (brightness - 115.0).abs() / 115.0).clamp(0.0, 1.0)
-            contrast_score = (contrast / 55.0).clamp(0.0, 1.0)
-            sharpness_score = (sharpness / 12.0).clamp(0.0, 1.0)
-            proxies['camera'] = (
-                0.30 * brightness_score + 0.45 * contrast_score +
-                0.25 * sharpness_score).clamp(0.0, 1.0)
+            if img.min() < 0:
+                brightness_score = (1.0 - img.mean(
+                    dim=(2, 3, 4)).abs() / 2.0).clamp(0.0, 1.0)
+                contrast_score = img.std(
+                    dim=(2, 3, 4), unbiased=False).clamp(0.0, 1.0)
+                gray = img.mean(dim=2)
+                dx = (gray[..., 1:] - gray[..., :-1]).abs().mean(
+                    dim=(2, 3))
+                dy = (gray[..., 1:, :] - gray[..., :-1, :]).abs().mean(
+                    dim=(2, 3))
+                sharpness_score = (0.5 * (dx + dy) / 0.5).clamp(0.0, 1.0)
+            else:
+                if img.max() <= 5.0:
+                    img = img * 255.0
+                gray = img.mean(dim=2)
+                brightness = gray.mean(dim=(2, 3))
+                contrast = gray.std(dim=(2, 3), unbiased=False)
+                dx = (gray[..., 1:] - gray[..., :-1]).abs().mean(
+                    dim=(2, 3))
+                dy = (gray[..., 1:, :] - gray[..., :-1, :]).abs().mean(
+                    dim=(2, 3))
+                sharpness = 0.5 * (dx + dy)
+                brightness_score = (
+                    1.0 - (brightness - 127.5).abs() / 127.5).clamp(0.0, 1.0)
+                contrast_score = (contrast / 65.0).clamp(0.0, 1.0)
+                sharpness_score = (sharpness / 18.0).clamp(0.0, 1.0)
+            image_per_view = (
+                0.25 * brightness_score + 0.45 * contrast_score +
+                0.30 * sharpness_score).clamp(0.0, 1.0)
+            reliability['image_per_view'] = image_per_view
+            reliability['image'] = image_per_view.mean(dim=1)
+
         points = batch_inputs_dict.get('points', None)
-        if points is not None:
+        if 'lidar' not in reliability and points is not None:
             counts = torch.tensor(
                 [point.shape[0] for point in points],
-                device=points[0].device,
+                device=device,
                 dtype=torch.float32)
-            proxies['lidar'] = (counts / 300000.0).clamp(0.0, 1.0)
-        return proxies
+            reliability['lidar'] = (counts / 300000.0).clamp(0.0, 1.0)
+        return reliability
 
     def predict(self, batch_inputs_dict: Dict[str, Optional[Tensor]],
                 batch_data_samples: List[Det3DDataSample],
@@ -312,11 +344,10 @@ class BEVFusion(Base3DDetector):
         batch_input_metas,
         **kwargs,
     ):
-        batch_inputs_dict = dict(batch_inputs_dict)
-        batch_inputs_dict['batch_input_metas'] = batch_input_metas
         imgs = batch_inputs_dict.get('imgs', None)
         points = batch_inputs_dict.get('points', None)
-        reliability = self._sensor_reliability_proxies(batch_inputs_dict)
+        reliability = self._collect_sensor_reliability(batch_inputs_dict,
+                                                       batch_input_metas)
         features = []
         if imgs is not None:
             imgs = imgs.contiguous()
@@ -346,8 +377,9 @@ class BEVFusion(Base3DDetector):
 
         if self.fusion_layer is not None:
             x = self.fusion_layer(features)
-            if self.attention_fusion_layer is not None:
-                x = self.attention_fusion_layer(features, x, reliability)
+            if self.reliability_fusion_layer is not None:
+                x = self.reliability_fusion_layer(
+                    features, fused_feature=x, reliability=reliability)
         else:
             assert len(features) == 1, features
             x = features[0]
@@ -368,10 +400,13 @@ class BEVFusion(Base3DDetector):
             bbox_loss = self.bbox_head.loss(feats, batch_data_samples)
 
         losses.update(bbox_loss)
-        if (self.attention_fusion_layer is not None
-                and hasattr(self.attention_fusion_layer,
+        if (self.reliability_fusion_layer is not None
+                and hasattr(self.reliability_fusion_layer,
                             'regularization_losses')):
             losses.update(
-                self.attention_fusion_layer.regularization_losses())
+                self.reliability_fusion_layer.regularization_losses())
+        if (self.reliability_fusion_layer is not None
+                and hasattr(self.reliability_fusion_layer, 'log_vars')):
+            losses.update(self.reliability_fusion_layer.log_vars())
 
         return losses

@@ -1,9 +1,15 @@
 import os
+from pathlib import Path
 from setuptools import setup
 
 import torch
 from torch.utils.cpp_extension import (BuildExtension, CppExtension,
                                        CUDAExtension)
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+# Keep extension output paths aligned with the import package
+# ``projects.BEVFusion`` even when pip runs this setup from the project dir.
+os.chdir(REPO_ROOT)
 
 
 def make_cuda_ext(name,
@@ -35,7 +41,9 @@ def make_cuda_ext(name,
 
     return extension(
         name='{}.{}'.format(module, name),
-        sources=[os.path.join(*module.split('.'), p) for p in sources],
+        sources=[
+            str(REPO_ROOT.joinpath(*module.split('.'), p)) for p in sources
+        ],
         include_dirs=extra_include_path,
         define_macros=define_macros,
         extra_compile_args=extra_compile_args,

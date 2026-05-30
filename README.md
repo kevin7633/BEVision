@@ -1,218 +1,230 @@
-## BEVision Research Branch
+# Reliability-Guided BEVFusion
 
-This branch contains a nuScenes-mini research workflow for:
+이 브랜치는 nuScenes Camera-LiDAR BEVFusion에 **sensor reliability 기반 residual fusion**을 추가한 실험 코드입니다. 목표는 clean validation 성능만 무리하게 올리는 것이 아니라, 카메라/라이다 품질이 낮아지는 상황에서 fusion이 덜 무너지도록 만드는 것입니다.
 
-**Reliability-Guided Cross-Self Attention BEV Fusion for robust Camera-LiDAR
-BEVFusion under adverse weather and sensor degradation.**
+대용량 파일은 저장소에 포함하지 않습니다. nuScenes 데이터, 체크포인트, conda 환경, `work_dirs/`, 로그 파일은 각자 로컬/서버 경로에 두고 실행합니다.
 
-The goal of this branch is not to reproduce full nuScenes SOTA yet. It is a
-compact, reproducible research branch for:
+## 핵심 구조
 
-- running a BEVFusion baseline on nuScenes-mini or a small subset,
-- applying controlled camera and LiDAR corruptions without overwriting the
-  original dataset,
-- comparing clean and corrupted performance,
-- computing lightweight camera/LiDAR reliability proxies,
-- adding a residual attention fusion module that reacts more strongly when
-  sensor reliability drops,
-- recording enough CSV/JSON summaries for follow-up experiments and website or
-  dashboard visualization.
+기본 BEVFusion은 camera BEV feature와 LiDAR BEV feature를 `ConvFuser`로 합칩니다. 이 브랜치의 reliability 모델은 그 뒤에 residual layer를 추가합니다.
 
-Large runtime artifacts are intentionally not committed. The repository does
-not include nuScenes data, checkpoints, conda environments, `work_dirs`,
-generated outputs, logs, or rendered images.
+```text
+fused_feature = base_feature + gate * correction
+```
 
-### What Was Added
+기본 설정은 다음과 같습니다.
 
-Core BEVFusion changes:
+- `base_source='lidar'`: LiDAR BEV feature를 안정적인 base로 사용합니다.
+- `correction_source='camera_lidar'`: camera+LiDAR BEV feature에서 보정량을 예측합니다.
+- `gate_mode='image_lidar'`: image reliability와 LiDAR reliability proxy로 gate를 계산합니다.
+- `gate_max=0.75`: 보정량이 base를 과하게 덮지 않도록 gate를 제한합니다.
+- correction 마지막 conv는 zero-init이라 학습 초기는 base feature에서 출발합니다.
 
+관련 구현 파일:
+
+- `projects/BEVFusion/bevfusion/reliability_fusion.py`
 - `projects/BEVFusion/bevfusion/corruptions.py`
-  - Camera corruption transforms: fog, low-light, contrast reduction, blur,
-    noise, occlusion, and combined corruption.
-  - LiDAR corruption transforms: random dropout, distance-based dropout,
-    intensity noise, noisy points, and combined corruption.
-  - `BEVFusionSensorReliabilityProxy`, which computes raw camera and LiDAR
-    reliability proxies before model preprocessing.
-
-- `projects/BEVFusion/bevfusion/reliability_attention_fusion.py`
-  - `ReliabilityGuidedAttentionResidualFusion`.
-  - Implements residual correction:
-    `F_final = F_base + gate * A`.
-  - Supports scalar, feature-based, and proxy-based reliability gates.
-  - Uses cross-attention from LiDAR BEV queries to camera BEV keys/values, then
-    optional BEV self-attention on downsampled BEV tokens.
-
 - `projects/BEVFusion/bevfusion/bevfusion.py`
-  - Adds optional `attention_fusion_layer`.
-  - Keeps baseline behavior when the attention module is disabled.
-  - Passes reliability proxy metadata into the residual fusion module.
-  - Supports attention-only debug finetuning.
 
-Experiment configs:
+## 포함된 config
 
-- `projects/BEVFusion/configs/bevfusion_lidar-cam_voxel0075_second_secfpn_1xb1-mini_nus-3d.py`
-  - nuScenes-mini baseline config.
+주요 config는 `configs/custom/` 아래에 있습니다.
 
-- `projects/BEVFusion/configs/bevfusion_mini_corruption_runtime_nus-3d.py`
-  - Runtime corruption config controlled through environment variables.
+- `bevfusion_baseline_1xb1_nuscenes.py`: full trainval baseline
+- `bevfusion_reliability_1xb1_nuscenes.py`: reliability residual fusion 모델
+- `bevfusion_baseline_debug_iters.py`: 짧은 baseline smoke test
+- `bevfusion_reliability_debug_iters.py`: 짧은 reliability smoke test
+- `bevfusion_ablation_residual_no_reliability.py`: reliability gate 없는 residual ablation
+- `bevfusion_ablation_image_gate.py`: image reliability gate만 사용
+- `bevfusion_ablation_lidar_gate.py`: LiDAR reliability gate만 사용
+- `bevfusion_ablation_attention_reliability.py`: channel/spatial attention ablation
+- `bevfusion_corruption_runtime_eval.py`: validation 시점 corruption 평가
 
-- `projects/BEVFusion/configs/bevfusion_mini_attention_corruption_runtime_nus-3d.py`
-  - Baseline plus attention residual module under corruptions.
+## 환경 설치
 
-- `projects/BEVFusion/configs/bevfusion_mini_attention_feature_gate_corruption_runtime_nus-3d.py`
-  - Feature-gated attention experiment config.
+권장 환경은 Python 3.9, CUDA 11.8, PyTorch 2.1.x, MMCV 2.1.x, MMEngine 0.10.x, MMDetection 3.2.x, MMDetection3D 1.4.x 계열입니다.
 
-- `projects/BEVFusion/configs/bevfusion_mini_attention_proxy_gate_corruption_runtime_nus-3d.py`
-  - Latest proxy reliability gate config.
-  - This is the most important config for the current research direction.
-
-Research scripts:
-
-- `research_scripts/check_stage0_env.sh`
-  - Checks storage, conda, CUDA, PyTorch, MMDetection3D packages, GPU, dataset,
-    and checkpoint state.
-
-- `research_scripts/run_bevfusion_mini_test.sh`
-  - Runs the clean mini baseline test.
-
-- `research_scripts/run_bevfusion_mini_robustness_matrix.sh`
-  - Runs clean, camera corruption, LiDAR corruption, and camera+LiDAR
-    corruption conditions.
-
-- `research_scripts/verify_corruption_effect.py`
-  - Verifies that corruptions are actually changing image/point statistics.
-
-- `research_scripts/compute_reliability_proxies.py`
-  - Computes reliability proxy samples and summary tables.
-
-- `research_scripts/diagnose_attention_gate_residual.py`
-  - Measures gate values, residual magnitude, and reliability reaction.
-
-- `research_scripts/run_attention_proxy_gate_diagnostics.sh`
-  - Runs the latest proxy gate diagnostic set.
-
-- `research_scripts/summarize_bevfusion_results.py`
-  - Converts MMDetection3D output JSON files into compact experiment summary
-    rows.
-
-Result summaries:
-
-- `research_results/stage18_proxy_gate_reliability_summary.json`
-  - Latest stage summary.
-  - Shows that the proxy gate now responds to corruption:
-    clean gate mean about `0.053`, camera fog severe about `0.128`, and LiDAR
-    dropout severe about `0.129`.
-
-- `research_results/experiment_summary.csv`
-  - Main table for clean/corrupted metrics, confidence statistics, detection
-    counts, configs, checkpoints, and output paths.
-
-- `research_results/stage5_robustness_matrix.csv`
-  - Baseline robustness matrix across corruption type and severity.
-
-- `research_results/stage6_reliability_vs_performance.csv`
-  - Reliability proxy summaries joined with performance drops.
-
-- `research_results/attention_gate_residual_diagnostics.csv`
-  - Gate and residual diagnostics for attention experiments.
-
-- `research_results/resume_notes.md`
-  - Practical notes for continuing the RunPod experiment later.
-
-### Current Research Status
-
-The project has reached the first useful mechanism checkpoint:
-
-- Baseline BEVFusion runs on nuScenes-mini.
-- Synthetic camera/LiDAR corruptions are applied in-memory, without modifying
-  the original data.
-- Clean and corrupted results are summarized as CSV/JSON.
-- Reliability proxy calculation is implemented.
-- Reliability-guided residual attention fusion is implemented.
-- The latest proxy gate is input-adaptive:
-  - clean gate mean: about `0.053`
-  - severe camera fog gate mean: about `0.128`
-  - severe LiDAR dropout gate mean: about `0.129`
-
-The current result should be interpreted carefully. The mechanism is now
-working and clean performance is preserved relative to the latest attention
-checkpoint, but the branch has not yet proven a final robustness gain over the
-original baseline. The next research step is short corruption-aware finetuning
-with the proxy gate active.
-
-### Recommended Reading Order
-
-For a researcher:
-
-1. `research_results/stage18_proxy_gate_reliability_summary.json`
-2. `research_results/experiment_summary.csv`
-3. `projects/BEVFusion/bevfusion/reliability_attention_fusion.py`
-4. `projects/BEVFusion/bevfusion/corruptions.py`
-5. `projects/BEVFusion/configs/bevfusion_mini_attention_proxy_gate_corruption_runtime_nus-3d.py`
-6. `research_scripts/run_attention_proxy_gate_diagnostics.sh`
-
-For someone building a website or dashboard:
-
-1. `research_results/experiment_summary.csv`
-   - Use this as the main experiment table.
-   - Useful fields: `exp_name`, `corruption_type`, `corruption_severity`,
-     `mAP`, `NDS`, `mean_confidence`, `detection_count`, `notes`.
-
-2. `research_results/stage5_robustness_matrix.csv`
-   - Use this for clean vs corruption severity plots.
-   - Suggested charts: mAP by corruption type/severity, NDS by corruption
-     type/severity, detection count by condition.
-
-3. `research_results/stage6_reliability_vs_performance.csv`
-   - Use this for reliability vs performance-drop visualizations.
-   - Suggested charts: camera reliability vs delta mAP, LiDAR reliability vs
-     delta NDS, degradation score vs mAP.
-
-4. `research_results/attention_gate_residual_diagnostics.csv`
-   - Use this for attention/gate behavior visualizations.
-   - Suggested charts: gate mean by condition, residual-to-base ratio by
-     condition, reliability mean by condition.
-
-5. `research_results/stage18_proxy_gate_reliability_summary.json`
-   - Use this for a compact "latest status" panel.
-   - It includes the latest interpretation, key metrics, and next steps.
-
-### How To Continue Experiments
-
-Activate the RunPod workspace environment:
+예시:
 
 ```bash
-source /workspace/tools/miniconda3/etc/profile.d/conda.sh
-conda activate /workspace/envs/bevfusion
-cd /workspace/mmdetection3d
-export PYTHONPATH=/workspace/mmdetection3d:${PYTHONPATH:-}
+conda create -n bevfusion python=3.9 -y
+conda activate bevfusion
+
+pip install torch==2.1.0 torchvision==0.16.0 --index-url https://download.pytorch.org/whl/cu118
+pip install -U openmim
+mim install "mmengine==0.10.7"
+mim install "mmcv==2.1.0"
+mim install "mmdet==3.2.0"
+pip install -v -e .
+pip install -v -e projects/BEVFusion
 ```
 
-Run the latest proxy gate diagnostics:
+서버 CUDA 경로가 필요하면 먼저 지정합니다.
 
 ```bash
-bash research_scripts/run_attention_proxy_gate_diagnostics.sh
+export CUDA_HOME=/usr/local/cuda-11.8
+export PATH=$CUDA_HOME/bin:$PATH
 ```
 
-Run a clean mini baseline:
+## 데이터 준비
+
+기본 데이터 위치는 `data/nuscenes/`입니다. 다른 위치를 쓰려면 `NUSCENES_DATA_ROOT`를 지정하세요.
 
 ```bash
-bash research_scripts/run_bevfusion_mini_test.sh
+export NUSCENES_DATA_ROOT=/path/to/nuscenes/
 ```
 
-Run the robustness matrix:
+필요한 구조:
+
+```text
+$NUSCENES_DATA_ROOT/
+├── v1.0-trainval/
+├── samples/
+├── sweeps/
+├── maps/
+├── nuscenes_infos_train.pkl
+└── nuscenes_infos_val.pkl
+```
+
+raw nuScenes는 있는데 info pkl이 없다면:
 
 ```bash
-bash research_scripts/run_bevfusion_mini_robustness_matrix.sh
+python tools/custom/create_nuscenes_trainval_infos.py \
+  --root-path "$NUSCENES_DATA_ROOT" \
+  --out-dir "$NUSCENES_DATA_ROOT" \
+  --extra-tag nuscenes \
+  --version v1.0-trainval \
+  --max-sweeps 10
 ```
 
-Runtime artifacts should stay outside git, under the persistent RunPod
-workspace paths:
+데이터 레이아웃 확인:
 
-- `/workspace/data/nuscenes`
-- `/workspace/checkpoints`
-- `/workspace/work_dirs`
-- `/workspace/outputs`
-- `/workspace/analysis_results`
-- `/workspace/envs`
-- `/workspace/tools`
+```bash
+python tools/custom/check_nuscenes_layout.py --data-root "$NUSCENES_DATA_ROOT"
+```
+
+## 실행 전 sanity check
+
+먼저 config/model build와 dataset sample을 확인합니다.
+
+```bash
+export PYTHONPATH=$(pwd):${PYTHONPATH:-}
+export NUSCENES_DATA_ROOT=/path/to/nuscenes/
+export BEVFUSION_WORK_ROOT=/path/to/work_dirs
+
+python tools/custom/run_config_sanity.py \
+  configs/custom/bevfusion_baseline_1xb1_nuscenes.py \
+  --build-model --skip-init-cfg
+
+python tools/custom/run_config_sanity.py \
+  configs/custom/bevfusion_reliability_1xb1_nuscenes.py \
+  --build-model --skip-init-cfg
+
+python tools/custom/check_dataset_sample.py \
+  configs/custom/bevfusion_reliability_1xb1_nuscenes.py \
+  --split train --index 0
+```
+
+짧은 100 iteration smoke test:
+
+```bash
+BEVFUSION_DEBUG_MAX_ITERS=100 \
+BEVFUSION_LOG_INTERVAL=10 \
+BEVFUSION_EXP_NAME=reliability_debug_100iter \
+python tools/train.py configs/custom/bevfusion_reliability_debug_iters.py
+```
+
+## Full Train
+
+V100 32GB 1장 기준으로 AMP에서 `grad_norm: nan`이 날 수 있어, 기본은 non-AMP입니다. batch size는 서버 메모리에 맞춰 조정하세요.
+
+Baseline:
+
+```bash
+export PYTHONPATH=$(pwd):${PYTHONPATH:-}
+export NUSCENES_DATA_ROOT=/path/to/nuscenes/
+export BEVFUSION_WORK_ROOT=/path/to/work_dirs
+export BEVFUSION_BATCH_SIZE=1
+export BEVFUSION_NUM_WORKERS=2
+export BEVFUSION_LOG_INTERVAL=20
+export BEVFUSION_EXP_NAME=baseline_bevfusion_full_trainval
+
+python tools/train.py configs/custom/bevfusion_baseline_1xb1_nuscenes.py
+```
+
+Reliability 모델:
+
+```bash
+export BEVFUSION_EXP_NAME=reliability_bevfusion_full_trainval
+python tools/train.py configs/custom/bevfusion_reliability_1xb1_nuscenes.py
+```
+
+두 실험을 순차 실행하려면:
+
+```bash
+bash tools/custom/run_full_train_sequence.sh
+```
+
+## 평가
+
+Clean validation:
+
+```bash
+python tools/test.py \
+  configs/custom/bevfusion_reliability_1xb1_nuscenes.py \
+  /path/to/checkpoint.pth \
+  --work-dir "$BEVFUSION_WORK_ROOT/eval_clean"
+```
+
+Corruption matrix 명령만 출력:
+
+```bash
+python tools/custom/run_corruption_matrix.py \
+  --checkpoint /path/to/checkpoint.pth \
+  --severity moderate
+```
+
+실제 순차 실행:
+
+```bash
+python tools/custom/run_corruption_matrix.py \
+  --checkpoint /path/to/checkpoint.pth \
+  --severity moderate \
+  --run
+```
+
+gate 통계 추출:
+
+```bash
+python tools/custom/collect_gate_stats.py \
+  "$BEVFUSION_WORK_ROOT"/reliability_bevfusion_full_trainval/*.log \
+  --out "$BEVFUSION_WORK_ROOT/reliability_gate_stats.csv"
+```
+
+## 예상 시간
+
+이 설정은 `max_epochs=6`입니다. V100 32GB 1장, non-AMP, batch size 2 기준 기존 측정에서 약 `0.92~0.96 sec/iter`, epoch당 약 `61,790 iter`가 나왔습니다.
+
+- baseline full train: 약 4.5~5일
+- reliability full train: 약 5일 안팎
+- baseline + reliability 순차 실행: 약 9~10일
+
+장비, 스토리지 I/O, validation 시간에 따라 달라질 수 있습니다.
+
+## 현재 해석
+
+이 모델은 clean mAP를 자동으로 올리는 구조라기보다, LiDAR base를 유지하면서 camera/LiDAR correction을 reliability gate로 조절하는 robustness-oriented 구조입니다. 따라서 논문/보고서에서는 clean 성능과 corruption 성능을 같이 비교하는 것이 좋습니다.
+
+권장 실험 순서:
+
+1. baseline clean validation
+2. reliability clean validation
+3. gate collapse 여부 확인
+4. image/LiDAR corruption matrix 평가
+5. ablation 비교: residual only, image gate, LiDAR gate, image+LiDAR gate
+
+## 주의
+
+- GitHub에는 데이터와 체크포인트를 올리지 마세요.
+- `NUSCENES_DATA_ROOT`, `BEVFUSION_WORK_ROOT`는 각자 환경에 맞게 지정하세요.
+- 오래 걸리는 full train 전에 반드시 100iter debug run과 dataset sample check를 먼저 통과시키세요.

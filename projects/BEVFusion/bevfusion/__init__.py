@@ -2,11 +2,10 @@ from .bevfusion import BEVFusion
 from .bevfusion_necks import GeneralizedLSSFPN
 from .corruptions import (BEVFusionCameraCorruption,
                           BEVFusionLiDARCorruption,
-                          BEVFusionSensorReliabilityProxy)
+                          BEVFusionSensorReliability)
 from .depth_lss import DepthLSSTransform, LSSTransform
 from .loading import BEVLoadMultiViewImageFromFiles
-from .reliability_attention_fusion import \
-    ReliabilityGuidedAttentionResidualFusion
+from .reliability_fusion import ReliabilityGuidedResidualFusion
 from .sparse_encoder import BEVFusionSparseEncoder
 from .transformer import TransformerDecoderLayer
 from .transforms_3d import (BEVFusionGlobalRotScaleTrans,
@@ -22,6 +21,6 @@ __all__ = [
     'BEVLoadMultiViewImageFromFiles', 'BEVFusionSparseEncoder',
     'TransformerDecoderLayer', 'BEVFusionRandomFlip3D',
     'BEVFusionGlobalRotScaleTrans', 'BEVFusionCameraCorruption',
-    'BEVFusionLiDARCorruption', 'BEVFusionSensorReliabilityProxy',
-    'ReliabilityGuidedAttentionResidualFusion'
+    'BEVFusionLiDARCorruption', 'BEVFusionSensorReliability',
+    'ReliabilityGuidedResidualFusion'
 ]
